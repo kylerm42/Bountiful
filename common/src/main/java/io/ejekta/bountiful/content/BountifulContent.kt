@@ -26,7 +26,7 @@ import net.minecraft.stats.StatFormatter
 import net.minecraft.world.entity.ai.memory.MemoryModuleType
 import net.minecraft.world.entity.ai.village.poi.PoiType
 import net.minecraft.world.entity.ai.village.poi.PoiTypes
-import net.minecraft.world.entity.npc.Villager
+import net.minecraft.world.entity.npc.villager.Villager
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 import net.minecraft.world.level.block.state.BlockState
@@ -60,13 +60,13 @@ object BountifulContent : KambrikAutoRegistrar {
         }.toSet()
     }
 
-    val BOUNTY_ITEM by "bounty" forItem { BountyItem() }
+    val BOUNTY_ITEM by "bounty" forItem { props -> BountyItem(props) }
 
-    val DECREE_ITEM by "decree" forItem { DecreeItem() }
+    val DECREE_ITEM by "decree" forItem { props -> DecreeItem(props) }
 
-    val BOARD = "bountyboard" forBlock { BoardBlock() }
+    val BOARD = "bountyboard" forBlock { props -> BoardBlock(props) }
 
-    val BOARD_ITEM by "bountyboard" forItem { BlockItem(BOARD.value, Item.Properties().stacksTo(1).fireResistant()) }
+    val BOARD_ITEM by "bountyboard" forItem { props -> BlockItem(BOARD.value, props.stacksTo(1).fireResistant()) }
 
     val BOARD_ENTITY by "board-be".forBlockEntity(BOARD, ::BoardBlockEntity)
 

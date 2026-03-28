@@ -1,7 +1,7 @@
 plugins {
     id("multiloader-common")
     id("net.neoforged.moddev")
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm")
 }
 
 neoForge {
@@ -9,12 +9,13 @@ neoForge {
     // Automatically enable AccessTransformers if the file exists
     val at = file("src/main/resources/META-INF/accesstransformer.cfg")
     if (at.exists()) {
-        accessTransformers.add(at.absolutePath)
+        accessTransformers.from(at.absolutePath)
     }
-    parchment {
-        minecraftVersion = project.property("parchment_minecraft") as String
-        mappingsVersion = project.property("parchment_version") as String
-    }
+    // Parchment disabled - no mappings available for minecraft 1.21.11 yet
+    // parchment {
+    //     minecraftVersion = project.property("parchment_minecraft") as String
+    //     mappingsVersion = project.property("parchment_version") as String
+    // }
 }
 
 repositories {
@@ -37,7 +38,7 @@ dependencies {
     implementation("io.ejekta.kambrik:kambrik-common:${project.property("kambrik_version")}") {
         isTransitive = false
     }
-    implementation("io.ejekta.percale:percale-neoforge:${project.property("percale_version")}") {
+    implementation("io.ejekta.percale:percale-common:${project.property("percale_version")}") {
         isTransitive = false
     }
 

@@ -11,12 +11,12 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.item.component.TooltipDisplay
+import java.util.function.Consumer
 
-class DecreeItem : Item(
-    Properties().stacksTo(1).fireResistant()
+class DecreeItem(props: Properties) : Item(
+    props.stacksTo(1).fireResistant().overrideDescription("bountiful.decree")
 ) {
-
-    override fun getDescriptionId() = "bountiful.decree"
 
     override fun getName(stack: ItemStack): Component {
         return Component.translatable(descriptionId).withStyle(ChatFormatting.DARK_PURPLE)
@@ -25,7 +25,8 @@ class DecreeItem : Item(
     override fun appendHoverText(
         pStack: ItemStack,
         pContext: TooltipContext,
-        pTooltipComponents: MutableList<Component>,
+        pTooltipDisplay: TooltipDisplay,
+        pTooltipComponents: Consumer<Component>,
         pTooltipFlag: TooltipFlag
     ) {
         if (Kambridge.isOnServer()) {
@@ -33,9 +34,9 @@ class DecreeItem : Item(
         }
         if (pStack != null) {
             val data = pStack[BountifulContent.DECREE_DATA]?.tooltipInfo(Minecraft.getInstance().level!!)
-            pTooltipComponents.addAll(data ?: emptySet())
+            data?.forEach(pTooltipComponents)
         }
-        super.appendHoverText(pStack, pContext, pTooltipComponents, pTooltipFlag)
+        super.appendHoverText(pStack, pContext, pTooltipDisplay, pTooltipComponents, pTooltipFlag)
     }
 
     companion object {
@@ -60,6 +61,8 @@ class DecreeItem : Item(
         ): ItemStack {
             val stack = ItemStack(BountifulContent.DECREE_ITEM)
             spawnRank.populateFunc(DecreeStack(stack).apply { rank = ranked }, decIds)
+            val knownFloat = if (decIds.isNotEmpty()) 1.0f else 0.0f
+            stack[net.minecraft.core.component.DataComponents.CUSTOM_MODEL_DATA] = net.minecraft.world.item.component.CustomModelData(listOf(knownFloat), emptyList(), emptyList(), emptyList())
             return stack
         }
     }

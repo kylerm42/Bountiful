@@ -14,13 +14,11 @@ class AnalyzerDecreeSlot(inv: SimpleContainer, val usingPlayer: Player, index: I
 
     override fun mayPickup(pPlayer: Player) = true
 
-    override fun set(stack: ItemStack?) {
+    override fun set(stack: ItemStack) {
         super.set(stack)
-        stack?.let {
-            if (Kambridge.isOnClient()) {
-                val anScreen = Minecraft.getInstance().screen as? AnalyzerScreen
-                anScreen?.refreshWidgets()
-            }
+        if (!stack.isEmpty && Kambridge.isOnClient()) {
+            val anScreen = Minecraft.getInstance().screen as? AnalyzerScreen
+            anScreen?.refreshWidgets()
         }
     }
 }

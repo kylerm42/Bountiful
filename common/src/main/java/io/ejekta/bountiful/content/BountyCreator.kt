@@ -78,6 +78,7 @@ class BountyCreator private constructor(
                 rewWorths = rewWorths,
                 targetRatio = if (Bountiful.packMode) infoTargetRatio else null
             )
+            this[net.minecraft.core.component.DataComponents.CUSTOM_MODEL_DATA] = net.minecraft.world.item.component.CustomModelData(listOf(infoRarity.ordinal * 0.1f), emptyList(), emptyList(), emptyList())
         }
     }
 

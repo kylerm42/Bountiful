@@ -78,16 +78,12 @@ class BountifulModFabric : ModInitializer {
         })
 
         // Increment entity bounties for all players within 12 blocks of the player and all players within 12 blocks of the mob
-        ServerEntityCombatEvents.AFTER_KILLED_OTHER_ENTITY.register(ServerEntityCombatEvents.AfterKilledOtherEntity { world, entity, killedEntity ->
+        ServerEntityCombatEvents.AFTER_KILLED_OTHER_ENTITY.register(ServerEntityCombatEvents.AfterKilledOtherEntity { world, entity, killedEntity, damageSource ->
             Bountybridge.handleEntityKills(world, entity, killedEntity)
         })
 
-        TradeOfferHelper.registerWanderingTraderOffers(1) {
-            Bountybridge.modifyTradeList(it)
-        }
-
-        TradeOfferHelper.registerRebalancedWanderingTraderOffers {
-            it.pool(
+        TradeOfferHelper.registerWanderingTraderOffers { builder ->
+            builder.pool(
                 Bountiful.id("merchant_trade_offers"), 1, DecreeTradeFactory()
             )
         }

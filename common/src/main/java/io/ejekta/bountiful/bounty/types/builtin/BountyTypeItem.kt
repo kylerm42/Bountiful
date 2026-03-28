@@ -12,6 +12,7 @@ import io.ejekta.bountiful.data.PoolEntry
 import io.ejekta.bountiful.util.asComponentJson
 import io.ejekta.bountiful.util.getTagItemKey
 import io.ejekta.bountiful.util.getTagItems
+import io.ejekta.bountiful.util.readOnlyCopy
 import io.ejekta.kambrik.bridge.Kambridge
 import io.ejekta.kambrik.ext.collect
 import io.ejekta.kambrik.ext.id
@@ -24,12 +25,11 @@ import net.minecraft.nbt.NbtOps
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.resources.RegistryOps
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.EnchantedBookItem
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -40,16 +40,16 @@ import kotlin.jvm.optionals.getOrNull
 
 class BountyTypeItem : IBountyExchangeable {
 
-    override val id: ResourceLocation = ResourceLocation.parse("item")
+    override val id: Identifier = Identifier.parse("item")
 
     override fun isValid(entry: PoolEntry, server: MinecraftServer): Boolean {
         return if (entry.content.startsWith("#")) {
             getTagItems(server.registryAccess(), getTagItemKey(
-                ResourceLocation.parse(entry.content.substringAfter("#"))
+                Identifier.parse(entry.content.substringAfter("#"))
             )).isNotEmpty()
         } else {
-            val id = getItem(ResourceLocation.parse(entry.content)).id
-            id == ResourceLocation.parse(entry.content)
+            val id = getItem(Identifier.parse(entry.content)).id
+            id == Identifier.parse(entry.content)
         }
     }
 
@@ -78,7 +78,7 @@ class BountyTypeItem : IBountyExchangeable {
     }
 
     private fun getCurrentStacks(entry: BountyDataEntry, player: Player): Map<ItemStack, Int> {
-        return player.inventory.items.collect(entry.amount) {
+        return player.inventory.readOnlyCopy.collect(entry.amount) {
             val sameId = id.toString() == entry.content
             if (entry.data == null) {
                 return@collect sameId // only do id check
@@ -175,11 +175,11 @@ class BountyTypeItem : IBountyExchangeable {
 
     companion object {
         fun getItem(entry: BountyDataEntry): Item {
-            return getItem(ResourceLocation.parse(entry.content))
+            return getItem(Identifier.parse(entry.content))
         }
 
-        fun getItem(id: ResourceLocation): Item {
-            return BuiltInRegistries.ITEM.get(id)
+        fun getItem(id: Identifier): Item {
+            return BuiltInRegistries.ITEM.get(id).get().value()
         }
 
         fun getItemStack(entry: BountyDataEntry, access: RegistryAccess): ItemStack {
@@ -199,12 +199,12 @@ class BountyTypeItem : IBountyExchangeable {
             val itemStack = getItemStack(entry, access)
             var named = mutableListOf<MutableComponent>(itemStack.hoverName.copy())
 
-            if (itemStack.item is EnchantedBookItem || itemStack.item.isEnchantable(itemStack) && Kambridge.isOnClient()) {
+            if (itemStack.item == Items.ENCHANTED_BOOK || (itemStack.has(DataComponents.ENCHANTABLE) && Kambridge.isOnClient())) {
                 var extra = mutableListOf<MutableComponent>()
                 val enchantComponent = itemStack.get(DataComponents.ENCHANTMENTS).takeUnless { it?.isEmpty == true } ?: itemStack.get(DataComponents.STORED_ENCHANTMENTS)
                 enchantComponent?.let { ec ->
                     val extraCast = extra as MutableList<Component>
-                    ec.addToTooltip(Item.TooltipContext.of(access), extraCast::add, TooltipFlag.NORMAL)
+                    ec.addToTooltip(Item.TooltipContext.of(access), extraCast::add, TooltipFlag.NORMAL, itemStack.components)
                     for (extraTip in extra) {
                         named.add(
                             textLiteral("* ").append(extraTip)

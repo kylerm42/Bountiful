@@ -34,7 +34,7 @@ import net.minecraft.nbt.NbtOps
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.RegistryOps
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.ExtraCodecs
 import net.minecraft.world.SimpleContainer
@@ -42,7 +42,7 @@ import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.ai.targeting.TargetingConditions
 import net.minecraft.world.entity.ai.village.poi.PoiManager
 import net.minecraft.world.entity.ai.village.poi.PoiType
-import net.minecraft.world.entity.npc.Villager
+import net.minecraft.world.entity.npc.villager.Villager
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
@@ -275,7 +275,7 @@ object BountifulCommands {
 
                 //player.serverWorld.pointOfInterestStorage.add()
 
-                val serverWorld = player.serverLevel()
+                val serverWorld = player.level() as? net.minecraft.server.level.ServerLevel ?: return@run
 
                 val rep: (Holder<PoiType>) -> Boolean = { registryEntry ->
                     //registryEntry.matchesKey(BountifulContent.POI_BOUNTY_BOARD)
@@ -294,9 +294,8 @@ object BountifulCommands {
 
                 val brain = villager.brain
 
-                val actTime = brain.schedule.getActivityAt((serverWorld.gameTime % 24000L).toInt())
-
-                source.sendSystemMessage(Component.literal("Currently doing: ${actTime.name}"))
+                // brain.schedule is private in 1.21.11; activity info no longer directly accessible
+                source.sendSystemMessage(Component.literal("Villager brain info not available in 1.21.11"))
 
                 println(brain)
 
@@ -375,7 +374,7 @@ object BountifulCommands {
 
             player.sendMessage("Content added.")
             player.sendMessage("Edit §6'config/bountiful/bounty_pools/$poolName.json'§r to edit details.") {
-                clickEvent = ClickEvent(ClickEvent.Action.OPEN_FILE, file.absolutePath)
+                clickEvent = ClickEvent.OpenFile(file.absolutePath)
                 onHoverShowText { addLiteral("Click to open file '${file.name}'") }
             }
         } else {
@@ -401,7 +400,7 @@ object BountifulCommands {
     private fun CommandContext<CommandSourceStack>.addEntityToPool(
         inAmount: IntRange? = null,
         inUnitWorth: Int? = null,
-        entityId: ResourceLocation,
+        entityId: Identifier,
         poolName: String
     ) {
         val cmd = kambrikCommand<CommandSourceStack> {

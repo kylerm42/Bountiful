@@ -4,9 +4,9 @@ accessible field net/minecraft/world/inventory/AnvilMenu cost Lnet/minecraft/wor
 accessible field net/minecraft/world/inventory/ItemCombinerMenu resultSlots Lnet/minecraft/world/inventory/ResultContainer;
 accessible field net/minecraft/world/inventory/ItemCombinerMenu inputSlots Lnet/minecraft/world/Container;
 # Brain stuff
-accessible field net/minecraft/world/entity/npc/Villager POI_MEMORIES Ljava/util/Map;
+accessible field net/minecraft/world/entity/npc/villager/Villager POI_MEMORIES Ljava/util/Map;
 accessible method net/minecraft/world/entity/ai/village/poi/PoiTypes register (Lnet/minecraft/core/Registry;Lnet/minecraft/resources/ResourceKey;Ljava/util/Set;II)Lnet/minecraft/world/entity/ai/village/poi/PoiType;
-# Register dynamic item properties for Bounty items
-accessible method net/minecraft/client/renderer/item/ItemProperties register (Lnet/minecraft/world/item/Item;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/renderer/item/ClampedItemPropertyFunction;)V
+# ItemProperties removed in 1.21.11 - item model switching now data-driven
+# TODO: reimplement with assets/<modid>/items/<item_name>.json
 # Adding to creative mode tabs
 accessible field net/minecraft/world/item/CreativeModeTabs FUNCTIONAL_BLOCKS Lnet/minecraft/resources/ResourceKey;

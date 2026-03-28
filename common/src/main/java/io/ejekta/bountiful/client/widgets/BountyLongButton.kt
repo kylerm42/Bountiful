@@ -1,7 +1,6 @@
 package io.ejekta.bountiful.client.widgets
 
 import com.mojang.blaze3d.vertex.ByteBufferBuilder
-import com.mojang.blaze3d.vertex.PoseStack
 import io.ejekta.bountiful.Bountiful
 import io.ejekta.bountiful.bounty.types.BountyTypeRegistry
 import io.ejekta.bountiful.bounty.types.builtin.BountyTypeEntity
@@ -18,7 +17,7 @@ import io.ejekta.kambrik.text.textLiteral
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.MobCategory
@@ -86,7 +85,8 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
     private fun renderEntry(dsl: KGuiDsl, entry: BountyDataEntry, x: Int, y: Int, isReward: Boolean = false) {
 
         if (entry.icon != null) {
-            val itemForIcon = BuiltInRegistries.ITEM.get(entry.icon)
+            val iconId = entry.icon!!
+            val itemForIcon = BuiltInRegistries.ITEM.get(iconId).map { it.value() }.orElse(net.minecraft.world.item.Items.AIR)
             dsl { itemStackIcon(ItemStack(itemForIcon), x, y) }
         } else {
             renderEntryBasedOnLogic(dsl, entry, x, y, isReward)
@@ -102,8 +102,8 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
                 }
             }
             val tr = Minecraft.getInstance().font
-            context.pose().pushPose()
-            context.pose().translate(0f, 0f, 200f)
+            context.pose().pushMatrix()
+            context.pose().translate(0f, 0f)
             context.drawString(
                 tr,
                 textToShow,
@@ -112,7 +112,7 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
                 0xFFFFFF,
                 true
             )
-            context.pose().popPose()
+            context.pose().popMatrix()
         }
         // Entry tooltip
         dsl {
@@ -164,7 +164,7 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
     }
 
     companion object {
-        val BUTTON = ResourceLocation.parse("widget/button")
+        val BUTTON = Identifier.parse("widget/button")
         val ARROW = Bountiful.id("arrow")
 
         const val ButtonWidth = 160

@@ -25,7 +25,7 @@ data class OnBountyComplete(
         if (ctx.screen == null && BountifulIO.configData.client.showCompletionToast) {
             player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, volume, pitch)
 
-            ctx.toasts.addToast(
+            ctx.toastManager.addToast(
                 SystemToast(
                     SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                     Component.translatable("bountiful.toast.complete"), // Bounty Complete!

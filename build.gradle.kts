@@ -1,10 +1,10 @@
 plugins {
     // see https://fabricmc.net/develop/ for new versions
-    id("fabric-loom") version "1.9-SNAPSHOT" apply false
+    id("fabric-loom") version "1.15.5" apply false
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
-    id("net.neoforged.moddev") version "0.1.110" apply false
-    kotlin("jvm") version "2.0.21"
-    kotlin("plugin.serialization") version "2.0.21"
+    id("net.neoforged.moddev") version "2.0.110" apply false
+    kotlin("jvm") version "2.2.20"
+    kotlin("plugin.serialization") version "2.2.20"
 }
 
 repositories {

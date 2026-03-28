@@ -13,7 +13,7 @@ import io.ejekta.kambrik.gui.draw.widgets.KScrollbarVertical
 import io.ejekta.kambrik.gui.screen.KambrikContainerScreen
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.network.chat.Component
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.item.ItemStack
@@ -147,9 +147,9 @@ class BoardScreen(handler: AbstractContainerMenu, inventory: Inventory, title: C
     companion object {
         private val TEXTURE = Bountiful.id("board_bg")
         private val SELECTOR = Bountiful.id("selector")
-        private val SCROLLER = ResourceLocation.parse("container/villager/scroller")
-        private val XP_FG = ResourceLocation.parse("container/villager/experience_bar_current")
-        private val XP_BG = ResourceLocation.parse("container/villager/experience_bar_background")
+        private val SCROLLER = Identifier.parse("container/villager/scroller")
+        private val XP_FG = Identifier.parse("container/villager/experience_bar_current")
+        private val XP_BG = Identifier.parse("container/villager/experience_bar_background")
     }
 }
 

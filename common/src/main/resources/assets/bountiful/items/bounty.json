@@ -1,0 +1,14 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "fallback": { "type": "minecraft:model", "model": "bountiful:item/bounty-common" },
+    "entries": [
+      { "threshold": 0.1, "model": { "type": "minecraft:model", "model": "bountiful:item/bounty-uncommon" } },
+      { "threshold": 0.2, "model": { "type": "minecraft:model", "model": "bountiful:item/bounty-rare" } },
+      { "threshold": 0.3, "model": { "type": "minecraft:model", "model": "bountiful:item/bounty-epic" } },
+      { "threshold": 0.4, "model": { "type": "minecraft:model", "model": "bountiful:item/bounty-epic" } }
+    ]
+  }
+}

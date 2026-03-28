@@ -11,10 +11,12 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.item.component.TooltipDisplay
 import java.util.*
+import java.util.function.Consumer
 
-class BountyItem : Item(
-    Properties().stacksTo(1).fireResistant()
+class BountyItem(props: Properties) : Item(
+    props.stacksTo(1).fireResistant()
 ) {
 
     override fun getName(stack: ItemStack): Component {
@@ -48,15 +50,16 @@ class BountyItem : Item(
     override fun appendHoverText(
         pStack: ItemStack,
         pContext: TooltipContext,
-        pTooltipComponents: MutableList<Component>,
+        pTooltipDisplay: TooltipDisplay,
+        pTooltipComponents: Consumer<Component>,
         pTooltipFlag: TooltipFlag
     ) {
         if (Kambridge.isOnServer()) {
             return
         }
         val tips = BountyStack(pStack).genTooltip(Kambridge.isOnServer(), pTooltipFlag)
-        pTooltipComponents.addAll(tips)
-        super.appendHoverText(pStack, pContext, pTooltipComponents, pTooltipFlag)
+        tips.forEach(pTooltipComponents)
+        super.appendHoverText(pStack, pContext, pTooltipDisplay, pTooltipComponents, pTooltipFlag)
     }
 
 }

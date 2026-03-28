@@ -11,13 +11,15 @@ import io.ejekta.bountiful.util.getNullable
 import io.ejekta.kambrik.ext.id
 import kotlinx.serialization.Serializable
 import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
+import net.minecraft.core.component.DataComponents
 import net.minecraft.world.item.Rarity
 import net.minecraft.world.item.crafting.RecipeHolder
 import net.minecraft.world.item.crafting.RecipeManager
+import net.minecraft.world.item.crafting.display.SlotDisplay
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
@@ -26,8 +28,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
     private val recipeManager: RecipeManager = server.recipeManager
     private val regManager = server.registryAccess()
 
-    private val terminators = mutableSetOf<ResourceLocation>()
-    private val deps = mutableMapOf<ResourceLocation, MutableSet<ResourceLocation>>()
+    private val terminators = mutableSetOf<Identifier>()
+    private val deps = mutableMapOf<Identifier, MutableSet<Identifier>>()
 
     // Final cost map
     private val costMap = mutableMapOf<Item, Double>()
@@ -44,7 +46,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         Bountiful.LOGGER.debug("Init solve system..")
 
 
-        for (item in server[Registries.ITEM]) {
+        for (item in net.minecraft.core.registries.BuiltInRegistries.ITEM) {
             val matchCost = data.matching.matchCost(item, server)
             if (matchCost != null) {
                 if (!data.matching.isIgnored(item)) {
@@ -69,11 +71,36 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
     private val ItemStack.recipes: List<RecipeHolder<*>>
         get() = stackLookup[this.item] ?: emptyList()
 
-    private val RecipeHolder<*>.inItemSets: List<Set<ItemStack>>
-        get() = this.value.ingredients.map { it.items.toSet() }
+    /**
+     * Extracts the result ItemStack from a recipe using the 1.21.11 display API.
+     * Returns null for recipes with no resolvable item result (e.g. smithing trim, special recipes).
+     */
+    private fun RecipeHolder<*>.resultStack(): ItemStack? {
+        val display = this.value.display().firstOrNull() ?: return null
+        return when (val slot = display.result()) {
+            is SlotDisplay.ItemStackSlotDisplay -> slot.stack()
+            is SlotDisplay.ItemSlotDisplay -> ItemStack(slot.item())
+            else -> null
+        }
+    }
 
-    private val stackLookup = recipeManager.recipes.toList().groupBy {
-        it.value.getResultItem(regManager).item
+    /**
+     * Returns ingredient option-sets for a recipe using the 1.21.11 PlacementInfo API.
+     * Each element is a set of interchangeable ItemStacks for one ingredient slot.
+     */
+    private val RecipeHolder<*>.inItemSets: List<Set<ItemStack>>
+        get() = this.value.placementInfo().ingredients().map { ingredient ->
+            ingredient.items().toList().map { holder -> ItemStack(holder.value()) }.toSet()
+        }.filter { it.isNotEmpty() }
+
+    /**
+     * Maps every Item to the list of recipes that produce it.
+     * Built once at construction time using the 1.21.11 RecipeManager.getRecipes() API.
+     */
+    private val stackLookup: Map<Item, List<RecipeHolder<*>>> by lazy {
+        recipeManager.getRecipes()
+            .mapNotNull { holder -> holder.resultStack()?.item?.let { item -> item to holder } }
+            .groupBy({ it.first }, { it.second })
     }
 
     @JvmRecord
@@ -131,7 +158,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
             }
 
             // If a recipe makes 3 of something, the actual cost is only 1/3 as much
-            ingredientRunningCost /= recipe.value.getResultItem(regManager).count
+            val resultCount = recipe.resultStack()?.count?.takeIf { it > 0 } ?: 1
+            ingredientRunningCost /= resultCount
 
             if (numUnsolvedIngredients > 0) {
                 //println("Could not solve for ${stack.identifier}".padStart(padding))
@@ -158,7 +186,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         var unsolved = 0
         val unsolvedList = mutableListOf<Item>()
         val allItemSet = mutableSetOf<Item>()
-        for (item in regManager.registry(Registries.ITEM).get()) {
+        for (item in net.minecraft.core.registries.BuiltInRegistries.ITEM) {
             allItemSet.add(item)
             // If there exists a recipe for it, solve it
             if (item in stackLookup.keys) {
@@ -175,9 +203,6 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
         info.redundant = matchCosts.keys.map { it.id!! }.sorted().toMutableList()
         info.unsolvedList = (allItemSet.filter { !data.matching.isIgnored(it) }.toSet() - matchCosts.keys - costMap.keys).map { it.id!! }.toList().sorted()
-
-        println("hi")
-        //info.unsolvedList = unsolvedList.map { it.id!! }.sorted() - info.redundant
     }
 
     fun syncConfig() {
@@ -195,7 +220,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         Bountiful.LOGGER.debug("Terminators:")
         // Insert terminators into required prop
         for (line in terminators.sorted() - info.redundant.toSet()) {
-            data.required[line] = costMap[regManager[Registries.ITEM].getNullable(line)]
+            val itemForLine: Item? = net.minecraft.core.registries.BuiltInRegistries.ITEM.getNullable(line)
+            data.required[line] = costMap[itemForLine]
             Bountiful.LOGGER.debug(line)
         }
         // Reset JSON file ordering (this is a bit hacky)
@@ -204,7 +230,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         //info.deps = deps.map { it.key to it.value.size }.sortedBy { -it.second }.toMap().toMutableMap()
         info.deps = deps.map { it.key to it.value }.toMap().toSortedMap()
 
-        for (item in regManager[Registries.ITEM].sortedBy { it.id }) {
+        for (item in net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing { it.id.toString() }).toList()) {
             val isIgnored = data.matching.isIgnored(item)
             if (costOf(item) == null && item.id !in info.redundant && !isIgnored) {
                 data.optional[item.id!!] = null
@@ -224,19 +250,19 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         val poolId = "chaos"
         val pool = Pool(poolId)
 
-        for (item in regManager[Registries.ITEM].sortedBy { it.id }) {
+        for (item in net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing { it.id.toString() }).toList()) {
             println("Item: ${item.id.toString().padEnd(50)} - ${costOf(item).toString().padEnd(16)} - ${pathLenMap[item]}")
             val realCost = costOf(item) ?: continue
             val stack = ItemStack(item)
-            val realAmtMax = stack.maxStackSize
-            var realRarity = when (stack.rarity) {
+            val realAmtMax = stack.getMaxStackSize()
+            var realRarity = when (stack.getRarity()) {
                 Rarity.UNCOMMON -> BountyRarity.RARE
                 Rarity.RARE -> BountyRarity.EPIC
                 Rarity.EPIC -> BountyRarity.LEGENDARY
                 else -> BountyRarity.COMMON
             }
 
-            if (stack.rarity == Rarity.COMMON && stack.maxStackSize == 1) {
+            if (stack.getRarity() == Rarity.COMMON && stack.getMaxStackSize() == 1) {
                 realRarity = BountyRarity.UNCOMMON
             }
 

@@ -1,14 +1,15 @@
 package io.ejekta.bountiful.advancement
 
 import com.mojang.serialization.Codec
-import net.minecraft.advancements.critereon.ContextAwarePredicate
-import net.minecraft.advancements.critereon.SimpleCriterionTrigger
+import com.mojang.serialization.MapCodec
+import net.minecraft.advancements.criterion.ContextAwarePredicate
+import net.minecraft.advancements.criterion.SimpleCriterionTrigger
 import net.minecraft.server.level.ServerPlayer
 import java.util.*
 
 class SimpleCriterion : SimpleCriterionTrigger<SimpleCriterion.Companion.FreeCondition>() {
 
-    override fun codec(): Codec<FreeCondition> = Codec.unit(FreeCondition())
+    override fun codec(): Codec<FreeCondition> = MapCodec.unit(FreeCondition()).codec()
 
     fun trigger(player: ServerPlayer) {
         trigger(player) { true }

@@ -9,7 +9,7 @@ import net.minecraft.world.item.crafting.RecipeType
 class Solveable(val ingredients: List<Ingredient>, val makes: Int, val type: RecipeType<*>) {
     fun solve(parser: RecursiveRecipeParser, seen: MutableSet<ItemStack>, deep: Int): Int? {
         val routes = ingredients.map { ingr ->
-            val staks = ingr.items.toList().filter { parser.visited.stackKey(it) !in seen }
+            val staks = ingr.items().map { ItemStack(it.value()) }.toList().filter { parser.visited.stackKey(it) !in seen }
 
             if (staks.isEmpty()) {
                 return null
@@ -34,7 +34,7 @@ class Solveable(val ingredients: List<Ingredient>, val makes: Int, val type: Rec
 
     override fun toString(): String {
         return "Solveable(ingredients=${ingredients.map { 
-            ingredient -> ingredient.items.map { it.id }.joinToString("/") 
+            ingredient -> ingredient.items().map { it.value().id }.toList().joinToString("/") 
         }}, makes=$makes, type=$type)"
     }
 
