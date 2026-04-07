@@ -241,17 +241,19 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
     }
 
-    fun sendToRegistries() {
-        Bountiful.LOGGER.debug("Sending chaos data to Bountiful registries..")
+    fun sendToRegistries(combined: Boolean = false) {
+        Bountiful.LOGGER.debug("Sending chaos data to Bountiful registries (combined=$combined)..")
 
-        BountifulContent.populatePools(emptyList())
-        BountifulContent.Decrees.clear()
+        if (!combined) {
+            BountifulContent.populatePools(emptyList())
+            BountifulContent.Decrees.clear()
+        }
 
         val poolId = "chaos"
         val pool = Pool(poolId)
 
         for (item in net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing { it.id.toString() }).toList()) {
-            println("Item: ${item.id.toString().padEnd(50)} - ${costOf(item).toString().padEnd(16)} - ${pathLenMap[item]}")
+            Bountiful.LOGGER.debug("Item: ${item.id.toString().padEnd(50)} - ${costOf(item).toString().padEnd(16)} - ${pathLenMap[item]}")
             val realCost = costOf(item) ?: continue
             val stack = ItemStack(item)
             val realAmtMax = stack.getMaxStackSize()
@@ -281,7 +283,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
         val decree = Decree(poolId, mutableSetOf(poolId), mutableSetOf(poolId))
         BountifulContent.Decrees.add(decree)
-        BountifulContent.populatePools(listOf(pool))
+        BountifulContent.populatePools(BountifulContent.Pools + listOf(pool))
     }
 
 }

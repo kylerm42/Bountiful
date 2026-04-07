@@ -2,6 +2,7 @@ package io.ejekta.bountiful.config
 
 import io.ejekta.bountiful.Bountiful
 import io.ejekta.bountiful.chaos.ChaosMode
+import io.ejekta.bountiful.chaos.ChaosModeOption
 import io.ejekta.bountiful.data.PoolEntry
 import io.ejekta.kambrik.text.textLiteral
 import kotlinx.serialization.Serializable
@@ -56,12 +57,12 @@ class BountifulConfigData {
 
     @Serializable
     class ChaosConfigData {
-        var enabled = false
+        var mode = ChaosModeOption.OFF
     }
 
     val chaos = ChaosConfigData()
 
-    @Transient var chaosMode: ChaosMode? = if (chaos.enabled) {
+    @Transient var chaosMode: ChaosMode? = if (chaos.mode != ChaosModeOption.OFF) {
         ChaosMode()
     } else null
 
@@ -237,14 +238,15 @@ class BountifulConfigData {
         val chaosCat = builder.getOrCreateCategory(Component.literal("Chaos Mode"))
 
         chaosCat.addEntry(
-            creator.startBooleanToggle(
-                Component.literal("Enable Chaos Mode (Experimental)"),
-                chaos.enabled
-            ).setDefaultValue(false).setTooltip(
-                Component.literal("Whether chaos mode is enabled. Will override all base and config data.")
+            creator.startEnumSelector(
+                Component.literal("Chaos Mode (Experimental)"),
+                ChaosModeOption::class.java,
+                chaos.mode
+            ).setDefaultValue(ChaosModeOption.OFF).setTooltip(
+                Component.literal("OFF: disabled. ON: chaos replaces all normal decrees. COMBINED: chaos decree added alongside normal decrees.")
             ).setSaveConsumer {
-                chaos.enabled = it
-                chaosMode = if (it) {
+                chaos.mode = it
+                chaosMode = if (it != ChaosModeOption.OFF) {
                     chaosMode ?: ChaosMode()
                 } else {
                     null

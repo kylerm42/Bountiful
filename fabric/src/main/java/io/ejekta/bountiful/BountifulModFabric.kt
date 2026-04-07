@@ -74,7 +74,8 @@ class BountifulModFabric : ModInitializer {
 
         // Experimental.. (Fabric Only)
         ServerLifecycleEvents.SERVER_STARTED.register(ServerLifecycleEvents.ServerStarted { server ->
-            BountifulIO.configData.chaosMode?.inject(server)
+            val combined = BountifulIO.configData.chaos.mode == io.ejekta.bountiful.chaos.ChaosModeOption.COMBINED
+            BountifulIO.configData.chaosMode?.inject(server, combined)
         })
 
         // Increment entity bounties for all players within 12 blocks of the player and all players within 12 blocks of the mob

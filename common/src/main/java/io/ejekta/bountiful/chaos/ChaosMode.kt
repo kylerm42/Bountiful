@@ -28,8 +28,8 @@ class ChaosMode {
     private var chaosData = chaosFile.read()
     private var chaosInfo = chaosFileInfo.read()
 
-    fun inject(server: MinecraftServer) {
-        Bountiful.LOGGER.info("Injecting chaos into Bountiful...")
+    fun inject(server: MinecraftServer, combined: Boolean = false) {
+        Bountiful.LOGGER.info("Injecting chaos into Bountiful (combined=$combined)...")
         chaosData = chaosFile.read()
         chaosInfo = chaosFileInfo.read()
 
@@ -43,7 +43,7 @@ class ChaosMode {
         chaosFile.write(chaosData)
         chaosFileInfo.write(chaosInfo)
 
-        solver.sendToRegistries()
+        solver.sendToRegistries(combined)
 
         Bountiful.LOGGER.info("Chaos sent!")
     }
