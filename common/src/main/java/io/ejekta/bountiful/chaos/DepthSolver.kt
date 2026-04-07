@@ -129,7 +129,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
             val inputSets = recipe.inItemSets
 
-            var numUnsolvedIngredients = 0
+            var numUnsolvedIngredients = inputSets.size
 
             for (optionSet in inputSets) {
                 // Currently grabs the first solved and adds the cost; This assumes tag ingredients all have the same cost;
