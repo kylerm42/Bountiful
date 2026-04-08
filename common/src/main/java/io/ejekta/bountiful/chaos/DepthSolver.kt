@@ -36,6 +36,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
     private val pathLenMap = mutableMapOf<Item, Int>()
     private val matchCosts = mutableMapOf<Item, Double>()
     private val ignoreSet = mutableSetOf<Item>()
+    // Items confirmed unsolvable — skip immediately on repeat encounters
+    private val unresolvableCache = mutableSetOf<Item>()
 
     fun costOf(item: Item): Double? {
         return costMap[item] ?: matchCosts[item]
@@ -108,6 +110,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
     // Attempts to solve for stack cost.
     fun solveFor(stack: ItemStack, path: List<ItemStack>): SolveResult? {
+        if (stack.item in unresolvableCache) return null
+
         val recipes = stack.recipes
 
         // If no recipe exists, it is a terminator.
@@ -174,9 +178,11 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         val finalCost = recipeCosts.minOrNull()
 
         // Of all calculated recipe costs, find the minimum
-        finalCost?.let {
-            costMap[stack.item] = it
+        if (finalCost != null) {
+            costMap[stack.item] = finalCost
             pathLenMap[stack.item] = path.size // may not accurately reflect path len?
+        } else {
+            unresolvableCache.add(stack.item)
         }
 
         return finalCost?.let { SolveResult(it, path) }
@@ -254,6 +260,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
         for (item in net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing { it.id.toString() }).toList()) {
             Bountiful.LOGGER.debug("Item: ${item.id.toString().padEnd(50)} - ${costOf(item).toString().padEnd(16)} - ${pathLenMap[item]}")
+            if (item in ignoreSet) continue
             val realCost = costOf(item) ?: continue
             val stack = ItemStack(item)
             val realAmtMax = stack.getMaxStackSize()
