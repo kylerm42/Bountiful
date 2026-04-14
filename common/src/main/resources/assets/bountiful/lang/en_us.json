@@ -91,5 +91,13 @@
 	"bountiful.tooltip.required": "Required",
 	"bountiful.tooltip.rewards": "Rewards",
 	"bountiful.tooltip.expired": "Expired",
-	"bountiful.tooltip.requirements": "Requirements not met."
+	"bountiful.tooltip.requirements": "Requirements not met.",
+
+	"tag.item.minecraft.planks": "Any Planks",
+	"tag.item.minecraft.logs": "Any Logs",
+	"tag.item.minecraft.wool": "Any Wool",
+	"tag.item.minecraft.beds": "Any Bed",
+	"tag.item.minecraft.banners": "Any Banner",
+	"tag.item.minecraft.candles": "Any Candle",
+	"tag.item.minecraft.boats": "Any Boat"
 }
