@@ -79,7 +79,8 @@ object BountifulContent : KambrikAutoRegistrar {
     val BOARD = "bountyboard" forBlock { props -> BoardBlock(props) }
 
     val BOARD_ITEM by "bountyboard" forItem { props ->
-        BlockItem(BOARD.value, props.stacksTo(1).fireResistant())
+        // Block items use the block's description id (block.bountiful.bountyboard), like vanilla's Items.registerBlock
+        BlockItem(BOARD.value, props.useBlockDescriptionPrefix().stacksTo(1).fireResistant())
     }
 
     val BOARD_ENTITY by "board-be".forBlockEntity(BOARD, ::BoardBlockEntity)

@@ -114,7 +114,7 @@
 
 		"chain": {
 			"type": "item",
-			"content": "minecraft:chain",
+			"content": "minecraft:iron_chain",
 			"markers": [
 				"iron_material"
 			],
