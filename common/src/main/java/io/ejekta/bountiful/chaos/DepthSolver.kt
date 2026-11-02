@@ -268,6 +268,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         val decree = Decree(poolId, mutableSetOf(poolId), mutableSetOf(poolId))
         BountifulContent.Decrees.add(decree)
         BountifulContent.populatePools(BountifulContent.Pools + listOf(pool))
+        Bountiful.LOGGER.info("Chaos pool has ${pool.items.size} items (${ignoreSet.size} ignored items skipped); ${BountifulContent.Pools.size} pools and ${BountifulContent.Decrees.size} decrees registered (combined=$combined)")
     }
 
     companion object {
