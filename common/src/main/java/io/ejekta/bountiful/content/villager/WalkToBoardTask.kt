@@ -3,6 +3,7 @@ package io.ejekta.bountiful.content.villager
 import com.google.common.collect.ImmutableMap
 import io.ejekta.bountiful.content.BountifulContent
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.phys.Vec3
 import net.minecraft.world.entity.ai.behavior.Behavior
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils
 import net.minecraft.world.entity.ai.memory.MemoryStatus
@@ -27,7 +28,7 @@ class WalkToBoardTask(val speed: Float) :
         val goalSpot = entity.brain.getMemoryInternal(BountifulContent.MEM_MODULE_NEAREST_BOARD)?.getOrNull()
 
         goalSpot?.let { globalPos ->
-            val dist = entity.blockPosition().center.distanceTo(globalPos.pos.center)
+            val dist = Vec3.atCenterOf(entity.blockPosition()).distanceTo(Vec3.atCenterOf(globalPos.pos))
             if (dist < 1.75) {
                 println("Close enough")
                 return false

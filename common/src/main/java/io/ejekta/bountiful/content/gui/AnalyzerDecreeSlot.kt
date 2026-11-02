@@ -17,7 +17,7 @@ class AnalyzerDecreeSlot(inv: SimpleContainer, val usingPlayer: Player, index: I
     override fun set(stack: ItemStack) {
         super.set(stack)
         if (Kambridge.isOnClient()) {
-            val anScreen = Minecraft.getInstance().screen as? AnalyzerScreen
+            val anScreen = Minecraft.getInstance().gui.screen() as? AnalyzerScreen
             anScreen?.refreshWidgets()
         }
     }

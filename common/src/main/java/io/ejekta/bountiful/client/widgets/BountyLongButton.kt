@@ -16,7 +16,6 @@ import io.ejekta.kambrik.gui.draw.KWidget
 import io.ejekta.kambrik.gui.draw.reactor.MouseReactor
 import io.ejekta.kambrik.text.textLiteral
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.EntityType
@@ -98,7 +97,7 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
             val textToShow = textLiteral(entry.amount.toString())
             val tr = Minecraft.getInstance().font
             val baseColor = if (isReward) {
-                entry.rarity.color.color ?: 0xFFFFFF
+                entry.rarity.rgb
             } else {
                 0xFFFFFF
             }

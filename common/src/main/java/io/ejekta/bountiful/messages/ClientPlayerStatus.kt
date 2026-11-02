@@ -19,7 +19,7 @@ class ClientPlayerStatus(private val statusType: Type) : KambrikMsg() {
         UPDATE_ANALYZER({
             val player = Minecraft.getInstance().player
             Bountiful.LOGGER.info("Analyzer request received by: $player")
-            val analyzerScreen = (Minecraft.getInstance().screen as? AnalyzerScreen)
+            val analyzerScreen = (Minecraft.getInstance().gui.screen() as? AnalyzerScreen)
 
             analyzerScreen?.let {
                 println("Got analyzer")

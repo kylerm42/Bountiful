@@ -61,7 +61,7 @@ class BoardScreen(handler: AbstractContainerMenu, inventory: Inventory, title: C
             offset(204, 75) {
                 img(XP_BG, 102, 5)
                 img(XP_FG, percentDone + 1, 5, x = 1)
-                val repColor = BountyRarity.forReputation(levelData.first).color.color ?: 0xFFFFFF
+                val repColor = BountyRarity.forReputation(levelData.first).rgb
                 val repTextColor = 0xFF000000.toInt() or (repColor and 0xFFFFFF)
                 textCenteredColored(-16, -2, textLiteral(levelData.first.toString()), repTextColor)
                 offset(-28, -2) {

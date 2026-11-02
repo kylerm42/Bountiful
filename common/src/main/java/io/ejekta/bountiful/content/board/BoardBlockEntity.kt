@@ -42,6 +42,7 @@ import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.Vec3
 import java.util.function.Predicate
 import kotlin.jvm.optionals.getOrNull
 
@@ -440,7 +441,7 @@ class BoardBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(Bountiful
     private fun findNearestVillagers(range: Int): List<Villager> {
         return level?.getEntitiesOfClass(
             Villager::class.java,
-            AABB.ofSize(blockPos.center, range * 1.0, range * 1.0, range * 1.0)
+            AABB.ofSize(Vec3.atCenterOf(blockPos), range * 1.0, range * 1.0, range * 1.0)
         ) { true } ?: emptyList()
     }
 

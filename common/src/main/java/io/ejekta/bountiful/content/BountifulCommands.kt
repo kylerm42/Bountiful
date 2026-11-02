@@ -408,7 +408,7 @@ object BountifulCommands {
 
     private fun genBounty(rep: Int) = PlayerCommand {
         try {
-            val sourcePos = BlockPos(source.position.floor())
+            val sourcePos = BlockPos.containing(source.position)
             val stack = BountyCreator.createBountyItem(
                 source.level,
                 sourcePos,

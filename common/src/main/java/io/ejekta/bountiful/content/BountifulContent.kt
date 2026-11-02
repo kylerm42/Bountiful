@@ -1,5 +1,6 @@
 package io.ejekta.bountiful.content
 
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders
 import com.mojang.serialization.Codec
 import io.ejekta.bountiful.Bountiful
 import io.ejekta.bountiful.advancement.SimpleCriterion
@@ -71,9 +72,9 @@ object BountifulContent : KambrikAutoRegistrar {
         }.toSet()
     }
 
-    val BOUNTY_ITEM by "bounty" forItem { props -> BountyItem(props) }
+    val BOUNTY_ITEM by "bounty" forItem { props -> BountyItem(props.compostable(ContextIntProviders.COMPOSTABLE_LOW_MEDIUM)) } // was 0.5 chance
 
-    val DECREE_ITEM by "decree" forItem { props -> DecreeItem(props) }
+    val DECREE_ITEM by "decree" forItem { props -> DecreeItem(props.compostable(ContextIntProviders.COMPOSTABLE_MEDIUM_HIGH)) } // was 0.85 chance
 
     val BOARD = "bountyboard" forBlock { props -> BoardBlock(props) }
 

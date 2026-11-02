@@ -22,11 +22,11 @@ data class OnBountyComplete(
 
     fun runLocally(player: Player) {
         // Don't show toasts when in an inventory (to prevent toast spam when moving items related to bounties)
-        if (ctx.screen == null && BountifulIO.configData.client.showCompletionToast) {
+        if (ctx.gui.screen() == null && BountifulIO.configData.client.showCompletionToast) {
             player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, volume, pitch)
 
             SystemToast.add(
-                ctx.getToastManager(),
+                ctx.gui.toastManager(),
                 SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                 Component.translatable("bountiful.toast.complete"),
                 Component.translatable("bountiful.toast.complete.desc")

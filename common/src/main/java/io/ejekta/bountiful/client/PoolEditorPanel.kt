@@ -340,7 +340,7 @@ class PoolEditorPanel(private val parent: EditorScreen) {
         onCycle = { next -> currentEntry()?.rarity = BountyRarity.valueOf(next.uppercase()) },
         colorProvider = { value ->
             val r = runCatching { BountyRarity.valueOf(value.uppercase()) }.getOrNull()
-            r?.color?.color?.let { 0xFF000000.toInt() or (it and 0xFFFFFF) } ?: COLOR_TEXT
+            r?.rgb?.let { 0xFF000000.toInt() or (it and 0xFFFFFF) } ?: COLOR_TEXT
         }
     )
 
@@ -892,7 +892,7 @@ class PoolEditorPanel(private val parent: EditorScreen) {
     }
 
     private fun rarityColor(r: BountyRarity): Int {
-        val c = r.color.color ?: return COLOR_TEXT
+        val c = r.rgb
         return 0xFF000000.toInt() or (c and 0xFFFFFF)
     }
 

@@ -4,6 +4,8 @@ package io.ejekta.bountiful.content.gui
 
 import io.ejekta.bountiful.content.BountifulContent
 import io.ejekta.kambrik.gui.screen.KambrikContainerMenu
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.util.Prediction
 import net.minecraft.world.SimpleContainer
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.entity.player.Player
@@ -27,7 +29,10 @@ class AnalyzerScreenHandler @JvmOverloads constructor(
     override fun removed(player: Player) {
         // return slot item to player, right? We don't want them to lose these items forever.
         val leftover = container.removeItemNoUpdate(0)
-        player.inventory.placeItemBackInInventory(leftover)
+        // Items are returned on the server only (as vanilla MerchantMenu does); the client is synced from it
+        if (player is ServerPlayer) {
+            player.inventory.placeItemBackInInventory(leftover, Prediction.SERVER_ONLY)
+        }
         container.stopOpen(player)
         super.removed(player)
     }

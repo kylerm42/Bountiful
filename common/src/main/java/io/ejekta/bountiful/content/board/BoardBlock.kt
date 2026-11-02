@@ -1,6 +1,5 @@
 package io.ejekta.bountiful.content.board
 
-import com.mojang.serialization.MapCodec
 import io.ejekta.bountiful.components.BountyStack
 import io.ejekta.bountiful.config.BountifulIO
 import io.ejekta.bountiful.content.BountifulContent
@@ -98,10 +97,6 @@ class BoardBlock(props: Properties) : BaseEntityBlock(
         } else {
             0.0f
         }
-    }
-
-    override fun codec(): MapCodec<out BaseEntityBlock> {
-        return simpleCodec(::BoardBlock)
     }
 
     override fun useItemOn(

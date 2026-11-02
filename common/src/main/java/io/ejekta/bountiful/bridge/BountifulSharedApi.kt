@@ -12,10 +12,10 @@ import io.ejekta.bountiful.content.villager.DecreeTradeFactory
 import io.ejekta.bountiful.messages.*
 import io.ejekta.bountiful.util.iterateBountyStacks
 import io.ejekta.kambrik.Kambrik
-import net.minecraft.advancements.Criterion
-import net.minecraft.advancements.criterion.EnterBlockTrigger
-import net.minecraft.advancements.criterion.PlayerTrigger
-import net.minecraft.advancements.criterion.SimpleCriterionTrigger
+import net.minecraft.advancements.triggers.Criterion
+import net.minecraft.advancements.triggers.EnterBlockTrigger
+import net.minecraft.advancements.triggers.PlayerTrigger
+import net.minecraft.advancements.triggers.SimpleCriterionTrigger
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.RegistryOps
 import net.minecraft.resources.ResourceKey
