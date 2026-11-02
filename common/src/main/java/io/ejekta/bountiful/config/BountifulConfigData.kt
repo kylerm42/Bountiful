@@ -1,6 +1,7 @@
 package io.ejekta.bountiful.config
 
 import io.ejekta.bountiful.chaos.ChaosMode
+import io.ejekta.bountiful.chaos.ChaosModeOption
 import io.ejekta.bountiful.data.PoolEntry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -49,13 +50,13 @@ class BountifulConfigData {
     }
 
     @Serializable
-    class DebugConfigData {
-        var enabled = false
+    class ChaosConfigData {
+        var mode = ChaosModeOption.OFF
     }
 
-    val dbg = DebugConfigData()
+    val chaos = ChaosConfigData()
 
-    @Transient var chaosMode: ChaosMode? = if (dbg.enabled) {
+    @Transient var chaosMode: ChaosMode? = if (chaos.mode != ChaosModeOption.OFF) {
         ChaosMode()
     } else null
 

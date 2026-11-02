@@ -2,6 +2,7 @@ package io.ejekta.bountiful.config
 
 import io.ejekta.bountiful.Bountiful
 import io.ejekta.bountiful.chaos.ChaosMode
+import io.ejekta.bountiful.chaos.ChaosModeOption
 import io.ejekta.bountiful.data.PoolEntry
 import me.shedaniel.clothconfig2.api.ConfigBuilder
 import net.minecraft.client.Minecraft
@@ -169,14 +170,15 @@ object BountifulConfigScreen {
         val debugCat = builder.getOrCreateCategory(tr("category.debug"))
 
         debugCat.addEntry(
-            creator.startBooleanToggle(
+            creator.startEnumSelector(
                 tr("debug.enable_chaos_mode"),
-                config.dbg.enabled
-            ).setDefaultValue(false).setTooltip(
+                ChaosModeOption::class.java,
+                config.chaos.mode
+            ).setDefaultValue(ChaosModeOption.OFF).setTooltip(
                 tr("debug.enable_chaos_mode.tooltip")
             ).setSaveConsumer {
-                config.dbg.enabled = it
-                config.chaosMode = if (it) {
+                config.chaos.mode = it
+                config.chaosMode = if (it != ChaosModeOption.OFF) {
                     config.chaosMode ?: ChaosMode()
                 } else {
                     null

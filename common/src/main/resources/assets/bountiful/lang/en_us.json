@@ -222,8 +222,8 @@
 	"bountiful.config.bounty.bonus_time.tooltip": "How much bonus time is given to bounties, in seconds",
 	"bountiful.config.client.completion_toast_messages": "Completion Toast Messages",
 	"bountiful.config.client.completion_toast_messages.tooltip": "Whether toast messages should appear upon bounty completion",
-	"bountiful.config.debug.enable_chaos_mode": "Enable Chaos Mode (Experimental)",
-	"bountiful.config.debug.enable_chaos_mode.tooltip": "Whether chaos mode is enabled. Will override all base and config data.",
+	"bountiful.config.debug.enable_chaos_mode": "Chaos Mode (Experimental)",
+	"bountiful.config.debug.enable_chaos_mode.tooltip": "OFF: disabled. ON: chaos replaces all normal decrees. COMBINED: chaos decree added alongside normal decrees.",
 	"bountiful.config.debug.pack_mode": "Pack Mode (Does not Save)",
 	"bountiful.config.debug.pack_mode.tooltip": "Turns on Modpack Dev mode for Bountiful. Is not saved."
 }

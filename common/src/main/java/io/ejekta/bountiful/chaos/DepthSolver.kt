@@ -35,6 +35,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
     private val pathLenMap = mutableMapOf<Item, Int>()
     private val matchCosts = mutableMapOf<Item, Double>()
     private val ignoreSet = mutableSetOf<Item>()
+    // Items confirmed unsolvable; repeat visits return null immediately
+    private val unresolvableCache = mutableSetOf<Item>()
 
     fun costOf(item: Item): Double? {
         return costMap[item] ?: matchCosts[item]
@@ -88,11 +90,20 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         resultStack.item to holder
     }.groupBy({ it.first }, { it.second })
 
+    /**
+     * Result of pricing one recipe's ingredient slots.
+     * @param cost summed cost of the slots that were solved
+     * @param unsolved number of slots for which no option could be priced; a recipe is only usable when this is 0
+     */
+    internal data class IngredientPricing(val cost: Double, val unsolved: Int)
+
     @JvmRecord
     data class SolveResult(val amt: Double, val path: List<ItemStack>)
 
     // Attempts to solve for stack cost.
     fun solveFor(stack: ItemStack, path: List<ItemStack>): SolveResult? {
+        if (stack.item in unresolvableCache) return null
+
         val recipes = stack.recipes
 
         // If no recipe exists, it is a terminator.
@@ -110,37 +121,21 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         for (recipe in recipes) {
             //val inputCounts = recipe.inItemSets.flatten().groupBy { it.item }.map { it.key to it.value.sumOf { stack -> stack.count } }.toMap()
 
-            var ingredientRunningCost = 0.0
-
             val inputSets = recipe.inItemSets
 
-            var numUnsolvedIngredients = 0
-
-            for (optionSet in inputSets) {
-                // Currently grabs the first solved and adds the cost; This assumes tag ingredients all have the same cost;
-                // It might be useful to average them and not just grab the first one in the future!
-                for (option in optionSet) {
-                    if (option.item in path.map { it.item } || path.size > 24) { // Cyclic dependency or too much recursion!
-                        continue
-                    }
-
-                    val itemCost = costOf(option.item) // Check for already calculated cost, simple O(1) lookup for worth
-                    if (itemCost != null) {
-                        // Add the cost of the item times the amount needed (in that slot)
-                        ingredientRunningCost += itemCost * option.count
-                        numUnsolvedIngredients -= 1
-                        break
-                    } else {
-                        // No calculated cost. Can we iteratively find one?
-                        val solvedCost = solveFor(option, path + stack)
-                        if (solvedCost != null) {
-                            ingredientRunningCost += solvedCost.amt * option.count
-                            numUnsolvedIngredients -= 1
-                            break
-                        }
-                    }
+            // Currently grabs the first solved option per slot; this assumes tag ingredients all have the same cost.
+            val pricing = priceIngredients(inputSets) { option ->
+                if (option.item in path.map { it.item } || path.size > 24) { // Cyclic dependency or too much recursion!
+                    null
+                } else {
+                    // Check for already calculated cost (O(1)), otherwise try to iteratively find one
+                    val perItem = costOf(option.item) ?: solveFor(option, path + stack)?.amt
+                    perItem?.let { it * option.count }
                 }
             }
+
+            var ingredientRunningCost = pricing.cost
+            val numUnsolvedIngredients = pricing.unsolved
 
             // If a recipe makes 3 of something, the actual cost is only 1/3 as much
             val resultCount = recipe.resultStack()?.count ?: 1
@@ -159,9 +154,11 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         val finalCost = recipeCosts.minOrNull()
 
         // Of all calculated recipe costs, find the minimum
-        finalCost?.let {
-            costMap[stack.item] = it
+        if (finalCost != null) {
+            costMap[stack.item] = finalCost
             pathLenMap[stack.item] = path.size // may not accurately reflect path len?
+        } else {
+            unresolvableCache.add(stack.item)
         }
 
         return finalCost?.let { SolveResult(it, path) }
@@ -189,7 +186,6 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         info.redundant = matchCosts.keys.map { it.id!! }.sorted().toMutableList()
         info.unsolvedList = (allItemSet.filter { !data.matching.isIgnored(it) }.toSet() - matchCosts.keys - costMap.keys).map { it.id!! }.toList().sorted()
 
-        println("hi")
         //info.unsolvedList = unsolvedList.map { it.id!! }.sorted() - info.redundant
     }
 
@@ -228,17 +224,20 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
     }
 
-    fun sendToRegistries() {
-        Bountiful.LOGGER.debug("Sending chaos data to Bountiful registries..")
+    fun sendToRegistries(combined: Boolean = false) {
+        Bountiful.LOGGER.debug("Sending chaos data to Bountiful registries (combined=$combined)..")
 
-        BountifulContent.populatePools(emptyList())
-        BountifulContent.Decrees.clear()
+        if (!combined) {
+            BountifulContent.populatePools(emptyList())
+            BountifulContent.Decrees.clear()
+        }
 
         val poolId = "chaos"
         val pool = Pool(poolId)
 
         for (item in BuiltInRegistries.ITEM.sortedBy { it.id }) {
-            println("Item: ${item.id.toString().padEnd(50)} - ${costOf(item).toString().padEnd(16)} - ${pathLenMap[item]}")
+            Bountiful.LOGGER.debug("Item: ${item.id.toString().padEnd(50)} - ${costOf(item).toString().padEnd(16)} - ${pathLenMap[item]}")
+            if (item in ignoreSet) continue
             val realCost = costOf(item) ?: continue
             val stack = ItemStack(item)
             val realAmtMax = stack.maxStackSize
@@ -268,7 +267,28 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
         val decree = Decree(poolId, mutableSetOf(poolId), mutableSetOf(poolId))
         BountifulContent.Decrees.add(decree)
-        BountifulContent.populatePools(listOf(pool))
+        BountifulContent.populatePools(BountifulContent.Pools + listOf(pool))
+    }
+
+    companion object {
+        /**
+         * Prices each ingredient slot by taking the first option that [priceOf] can resolve.
+         * The unsolved counter starts at the number of slots, so a slot with no resolvable option
+         * (including an empty option set) leaves the recipe unsolved instead of pricing it as free.
+         */
+        internal fun <T> priceIngredients(optionSets: List<Collection<T>>, priceOf: (T) -> Double?): IngredientPricing {
+            var cost = 0.0
+            var unsolved = optionSets.size
+            for (optionSet in optionSets) {
+                for (option in optionSet) {
+                    val price = priceOf(option) ?: continue
+                    cost += price
+                    unsolved -= 1
+                    break
+                }
+            }
+            return IngredientPricing(cost, unsolved)
+        }
     }
 
 }
