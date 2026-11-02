@@ -14,7 +14,7 @@ import io.ejekta.bountiful.data.Decree
 import net.minecraft.core.BlockPos
 import net.minecraft.core.GlobalPos
 import net.minecraft.gametest.framework.GameTestHelper
-import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.item.Items
 
 object BountifulGameTestCases {
@@ -44,7 +44,7 @@ object BountifulGameTestCases {
 
         helper.setBlock(boardPos, BountifulContent.BOARD.value)
         helper.succeedWhen {
-            val board = helper.getBlockEntity<BoardBlockEntity>(boardPos)
+            val board = helper.getBlockEntity(boardPos, BoardBlockEntity::class.java)
             helper.assertTrue(
                 BountifulTestSupport.decreeStacks(board).any { it.item is DecreeItem },
                 "Fresh boards should reveal at least one decree"
@@ -59,8 +59,8 @@ object BountifulGameTestCases {
 
     fun completionFlowSchedulesVillager(helper: GameTestHelper) {
         helper.setBlock(boardPos, BountifulContent.BOARD.value)
-        val board = helper.getBlockEntity<BoardBlockEntity>(boardPos)
-        val villager = helper.spawnWithNoFreeWill(EntityType.VILLAGER, villagerPos)
+        val board = helper.getBlockEntity(boardPos, BoardBlockEntity::class.java)
+        val villager = helper.spawnWithNoFreeWill(EntityTypes.VILLAGER, villagerPos)
         val player = helper.makeMockServerPlayerInLevel()
         val completedBounty = BountifulTestSupport.makeItemBounty(helper.level, Items.WHEAT, 4)
 
@@ -80,13 +80,13 @@ object BountifulGameTestCases {
 
     fun entityKillProgressAdvancesMatchingBounty(helper: GameTestHelper) {
         val player = helper.makeMockServerPlayerInLevel()
-        val trackedBounty = BountifulTestSupport.makeEntityBounty(helper.level, EntityType.ZOMBIE, amount = 2)
-        val zombie = helper.spawn(EntityType.ZOMBIE, BlockPos(2, 1, 2))
+        val trackedBounty = BountifulTestSupport.makeEntityBounty(helper.level, EntityTypes.ZOMBIE, amount = 2)
+        val zombie = helper.spawn(EntityTypes.ZOMBIE, BlockPos(2, 1, 2))
 
         player.inventory.add(trackedBounty.stack)
         Bountybridge.handleEntityKills(helper.level, player, zombie)
 
-        val playerBounty = BountyStack(player.inventory.items.first { it.item is BountyItem })
+        val playerBounty = BountyStack(player.inventory.nonEquipmentItems.first { it.item is BountyItem })
         val objective = playerBounty.objs.single()
 
         helper.assertValueEqual(playerBounty.progressOf(objective), 1, "entity bounty progress")
@@ -124,7 +124,7 @@ object BountifulGameTestCases {
             val bounty = BountyStack(generated)
             val objective = bounty.objs.single()
 
-            helper.assertValueEqual(objective.content, Items.EMERALD_BLOCK.builtInRegistryHolder().key().location().toString(), "greedy currency content")
+            helper.assertValueEqual(objective.content, Items.EMERALD_BLOCK.builtInRegistryHolder().key().identifier().toString(), "greedy currency content")
             helper.assertValueEqual(objective.amount, 3, "greedy currency amount")
         }
 
@@ -137,7 +137,7 @@ object BountifulGameTestCases {
         helper.setBlock(boardPos, BountifulContent.BOARD.value)
 
         helper.succeedWhen {
-            val board = helper.getBlockEntity<BoardBlockEntity>(boardPos)
+            val board = helper.getBlockEntity(boardPos, BoardBlockEntity::class.java)
             helper.assertTrue(
                 BountifulTestSupport.bountyStacks(board).any { it.item is BountyItem },
                 "Board should have generated a bounty before serialization"
@@ -173,7 +173,7 @@ object BountifulGameTestCases {
         helper.setBlock(boardPos, BountifulContent.BOARD.value)
 
         helper.succeedWhen {
-            val board = helper.getBlockEntity<BoardBlockEntity>(boardPos)
+            val board = helper.getBlockEntity(boardPos, BoardBlockEntity::class.java)
             helper.assertTrue(
                 BountifulTestSupport.bountyStacks(board).any { it.item is BountyItem },
                 "Board should have generated a bounty before masking assertions"

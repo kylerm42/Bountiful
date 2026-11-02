@@ -15,6 +15,8 @@ import io.ejekta.bountiful.data.Decree
 import io.ejekta.bountiful.data.Pool
 import io.ejekta.bountiful.data.PoolEntry
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.util.ProblemReporter
+import net.minecraft.world.level.storage.TagValueInput
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
@@ -42,7 +44,7 @@ object BountifulTestSupport {
     fun saveBoard(board: BoardBlockEntity) = board.saveCustomOnly(board.level!!.registryAccess())
 
     fun loadBoard(board: BoardBlockEntity, tag: net.minecraft.nbt.CompoundTag) {
-        board.loadCustomOnly(tag, board.level!!.registryAccess())
+        board.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, board.level!!.registryAccess(), tag))
     }
 
     fun makeItemBounty(
@@ -57,7 +59,7 @@ object BountifulTestSupport {
             objs = listOf(
                 BountyDataEntry(
                     id = "test.item_objective",
-                    content = objectiveItem.builtInRegistryHolder().key().location().toString(),
+                    content = objectiveItem.builtInRegistryHolder().key().identifier().toString(),
                     rarity = BountyRarity.COMMON,
                     logicName = BountyTypeRegistry.ITEM.id.toString(),
                     amount = objectiveAmount
@@ -66,7 +68,7 @@ object BountifulTestSupport {
             rews = listOf(
                 BountyDataEntry(
                     id = "test.item_reward",
-                    content = rewardItem.builtInRegistryHolder().key().location().toString(),
+                    content = rewardItem.builtInRegistryHolder().key().identifier().toString(),
                     rarity = BountyRarity.COMMON,
                     logicName = BountyTypeRegistry.ITEM.id.toString(),
                     amount = rewardAmount
@@ -92,7 +94,7 @@ object BountifulTestSupport {
             objs = listOf(
                 BountyDataEntry(
                     id = "test.entity_objective",
-                    content = target.builtInRegistryHolder().key().location().toString(),
+                    content = target.builtInRegistryHolder().key().identifier().toString(),
                     rarity = BountyRarity.COMMON,
                     logicName = BountyTypeRegistry.ENTITY.id.toString(),
                     amount = amount
@@ -101,7 +103,7 @@ object BountifulTestSupport {
             rews = listOf(
                 BountyDataEntry(
                     id = "test.entity_reward",
-                    content = rewardItem.builtInRegistryHolder().key().location().toString(),
+                    content = rewardItem.builtInRegistryHolder().key().identifier().toString(),
                     rarity = BountyRarity.COMMON,
                     logicName = BountyTypeRegistry.ITEM.id.toString(),
                     amount = 1
@@ -158,8 +160,8 @@ object BountifulTestSupport {
         fun toPoolEntry(id: String): PoolEntry {
             return PoolEntry.create().apply {
                 this.id = id
-                type = net.minecraft.resources.ResourceLocation.parse(logicName)
-                content = item.builtInRegistryHolder().key().location().toString()
+                type = net.minecraft.resources.Identifier.parse(logicName)
+                content = item.builtInRegistryHolder().key().identifier().toString()
                 this.amount = PoolEntry.EntryRange(this@TestPoolEntry.amount.first, this@TestPoolEntry.amount.last)
                 this.unitWorth = this@TestPoolEntry.unitWorth
                 this.rarity = this@TestPoolEntry.rarity
