@@ -54,6 +54,18 @@ loom {
             vmArg('-Dfabric-api.gametest=true')
             vmArg("-Dfabric-api.gametest.report-file=${file("$buildDir/reports/game_test/results.xml").absolutePath}")
         }
+        // Fabric API client gametest (needs a display). Run: ./gradlew :fabric:runClientGameTest
+        // Screenshots: fabric/build/run/clientGameTest/screenshots
+        clientGameTest {
+            client()
+            source sourceSets.gametest
+            setConfigName('Fabric Client Game Test')
+            ideConfigGenerated(false)
+            runDir('build/run/clientGameTest')
+            vmArg('-Dfabric.client.gametest')
+            programArg('--username')
+            programArg('Player0')
+        }
     }
 }
 
@@ -69,6 +81,7 @@ tasks.named('processGametestResources') {
         def mainMetadata = new JsonSlurper().parse(file("$buildDir/resources/main/fabric.mod.json")) as Map
         def entrypoints = new LinkedHashMap(mainMetadata.entrypoints as Map)
         entrypoints['fabric-gametest'] = ['io.ejekta.bountiful.test.BountifulFabricGameTest']
+        entrypoints['fabric-client-gametest'] = ['io.ejekta.bountiful.test.BountifulClientGameTest']
         def gametestMetadata = new LinkedHashMap(mainMetadata)
         gametestMetadata.entrypoints = entrypoints
         file("${destinationDir}/fabric.mod.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(gametestMetadata))
@@ -86,4 +99,15 @@ tasks.named('jar', Jar) {
 
 tasks.named('runGameTestServer') {
     dependsOn(tasks.named('gametestClasses'))
+}
+
+tasks.named('runClientGameTest') {
+    dependsOn(tasks.named('gametestClasses'))
+    def runDirectory = file("$buildDir/run/clientGameTest")
+    doFirst {
+        // Fresh run dir each time (the world is created by the test); the integrated server needs the EULA file
+        delete(runDirectory)
+        runDirectory.mkdirs()
+        new File(runDirectory, 'eula.txt').text = 'eula=true\n'
+    }
 }
