@@ -34,7 +34,7 @@ class AnalyzerPoolWidget(val pool: Pool, maxWorth: Double, val pixSize: Int, val
         }
     }
 
-    val stepMax = stepMap.maxOf { it.value.size }
+    val stepMax = stepMap.maxOfOrNull { it.value.size } ?: 1
 
     val stepColors = stepMap.map {
         // 1.0 -> green (0.333), 0.0 -> red (0.0)

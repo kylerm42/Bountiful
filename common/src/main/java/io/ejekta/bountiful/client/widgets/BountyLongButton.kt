@@ -139,7 +139,7 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
             nextStratum()
 
             // Render objectives
-            renderEntries(getStack()[BountifulContent.BOUNTY_OBJS]!!) { rx, ry, e ->
+            renderEntries((getStack()[BountifulContent.BOUNTY_OBJS] ?: emptyList())) { rx, ry, e ->
                 renderEntry(this, e, rx, ry, false)
             }
 
@@ -148,7 +148,7 @@ class BountyLongButton(val parent: BoardScreen, var bountyIndex: Int) : KWidget 
             }
 
             // Render rewards
-            renderEntries(getStack()[BountifulContent.BOUNTY_REWS]!!) { rx, ry, e ->
+            renderEntries((getStack()[BountifulContent.BOUNTY_REWS] ?: emptyList())) { rx, ry, e ->
                 renderEntry(this, e, BountyZoneSize + ArrowWidth + rx, ry, true)
             }
         }

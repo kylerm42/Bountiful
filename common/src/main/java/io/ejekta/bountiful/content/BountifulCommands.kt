@@ -13,6 +13,7 @@ import io.ejekta.bountiful.content.item.DecreeItem
 import io.ejekta.bountiful.data.PoolEntry
 import io.ejekta.bountiful.decree.DecreeSpawnCondition
 import io.ejekta.bountiful.messages.ClipboardCopy
+import io.ejekta.bountiful.messages.ContentSync
 import io.ejekta.bountiful.util.asComponentJson
 import io.ejekta.bountiful.util.checkOnBoard
 import io.ejekta.bountiful.util.openSimpleMenu
@@ -131,6 +132,8 @@ object BountifulCommands {
 
                 "analyzer" runs {
                     try {
+                        // The analyzer charts need the decrees and pools, which only exist on the server
+                        source.player?.let { ContentSync.sendTo(it) }
                         source.player?.openSimpleMenu(tr("analyzer.title")) { syncId: Int, playerInventory: Inventory, player: Player ->
                             AnalyzerScreenHandler(syncId, playerInventory, SimpleContainer(AnalyzerScreenHandler.SIZE))
                         }
@@ -141,6 +144,7 @@ object BountifulCommands {
 
                 "editor" runs {
                     try {
+                        source.player?.let { ContentSync.sendTo(it) }
                         source.player?.openSimpleMenu(tr("editor.title", "Bountiful Editor")) { syncId: Int, playerInventory: Inventory, player: Player ->
                             EditorScreenHandler(syncId, playerInventory, SimpleContainer(EditorScreenHandler.SIZE))
                         }

@@ -58,6 +58,7 @@ interface BountifulSharedApi {
         Kambrik.Message.registerClientMessage<OnBountyComplete>(Bountiful.id("bounty_complete"))
         Kambrik.Message.registerClientMessage<UpdateCriteriaObjective>(Bountiful.id("update_bounty_criteria"))
         Kambrik.Message.registerClientMessage<ClientPlayerStatus>(Bountiful.id("client_player_status"))
+        Kambrik.Message.registerClientMessage<ContentSyncChunk>(Bountiful.id("content_sync"))
     }
 
     fun registerJigsawPieces(server: MinecraftServer) {

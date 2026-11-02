@@ -13,6 +13,9 @@ import io.ejekta.bountiful.content.board.BoardInventory
 import io.ejekta.bountiful.content.gui.AnalyzerScreenHandler
 import io.ejekta.bountiful.content.gui.BoardScreenHandler
 import io.ejekta.bountiful.content.gui.EditorScreenHandler
+import io.ejekta.bountiful.content.item.DecreeItem
+import io.ejekta.bountiful.messages.ClientPlayerStatus
+import io.ejekta.bountiful.messages.OnBountyComplete
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
@@ -32,8 +35,17 @@ import net.minecraft.world.item.ItemStack
 class BountifulClientGameTest : FabricClientGameTest {
 
     override fun runTest(context: ClientGameTestContext) {
-        context.worldBuilder().create().use {
+        context.worldBuilder().create().use { singleplayer ->
             context.waitTicks(20)
+
+            // Clientbound Bountiful messages must have a registered payload type and a client receiver: a missing one
+            // is only reported as "Unknown custom packet payload" in the log, so send one and assert on the log
+            singleplayer.server.runOnServer<RuntimeException> { server ->
+                val serverPlayer = server.playerList.players.first()
+                OnBountyComplete(1f, 1f).sendToClient(serverPlayer)
+                ClientPlayerStatus.Type.UPDATE_ANALYZER.sendToClient(serverPlayer)
+            }
+            context.waitTicks(5)
             context.runOnClient<RuntimeException> { mc -> openBoard(mc) }
             context.waitForScreen(BoardScreen::class.java)
             // Several frames: entity previews are created on the first frame and re-rendered afterwards
@@ -58,7 +70,28 @@ class BountifulClientGameTest : FabricClientGameTest {
             }
             context.waitForScreen(AnalyzerScreen::class.java)
             context.waitTicks(5)
-            context.takeScreenshot("analyzer_screen")
+            context.takeScreenshot("analyzer_screen_empty")
+
+            // Put a decree in the analyzer slot the way the game does (Slot.set on the client menu): the
+            // pool charts must appear for the decree's pools, in both objective and reward mode
+            context.runOnClient<RuntimeException> { mc ->
+                val screen = mc.gui.screen() as AnalyzerScreen
+                val decree = DecreeItem.create(listOf("fletcher"))
+                (screen.menu as AnalyzerScreenHandler).getSlot(0).set(decree)
+            }
+            context.waitTicks(5)
+            context.takeScreenshot("analyzer_screen_objectives")
+            val objectiveCharts = context.computeOnClient<Int, RuntimeException> { mc ->
+                (mc.gui.screen() as AnalyzerScreen).chartCount()
+            }
+            check(objectiveCharts > 0) { "Analyzer drew no pool charts for a fletcher decree (objective mode)" }
+            context.runOnClient<RuntimeException> { mc -> (mc.gui.screen() as AnalyzerScreen).toggleMode() }
+            context.waitTicks(5)
+            context.takeScreenshot("analyzer_screen_rewards")
+            val rewardCharts = context.computeOnClient<Int, RuntimeException> { mc ->
+                (mc.gui.screen() as AnalyzerScreen).chartCount()
+            }
+            check(rewardCharts > 0) { "Analyzer drew no pool charts for a fletcher decree (reward mode)" }
 
             context.runOnClient<RuntimeException> { mc ->
                 val inv = mc.player!!.inventory

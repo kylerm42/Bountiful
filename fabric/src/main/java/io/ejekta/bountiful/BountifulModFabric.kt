@@ -58,9 +58,9 @@ class BountifulModFabric : ModInitializer {
         KambrikRegistrar.doRegistrationsFor(BountifulContent)
 
         Bountybridge.registerServerMessages()
-        if (FabricLoader.getInstance().environmentType == net.fabricmc.api.EnvType.SERVER) {
-            Bountybridge.registerClientMessages()
-        }
+        // Clientbound payload types must be registered in the common initializer on both sides;
+        // Kambrik attaches the client receivers once its client entrypoint has run.
+        Bountybridge.registerClientMessages()
 
         CommandRegistrationCallback.EVENT.register(CommandRegistrationCallback(BountifulCommands::register))
 

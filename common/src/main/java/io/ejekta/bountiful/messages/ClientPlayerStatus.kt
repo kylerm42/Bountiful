@@ -22,7 +22,7 @@ class ClientPlayerStatus(private val statusType: Type) : KambrikMsg() {
             val analyzerScreen = (Minecraft.getInstance().gui.screen() as? AnalyzerScreen)
 
             analyzerScreen?.let {
-                println("Got analyzer")
+                Bountiful.LOGGER.debug("Refreshing analyzer after status update")
                 it.refreshWidgets()
             }
         })

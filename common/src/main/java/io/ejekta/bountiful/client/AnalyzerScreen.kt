@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.item.ItemStack
 import kotlin.math.roundToInt
 
 
@@ -28,16 +29,21 @@ class AnalyzerScreen(handler: AbstractContainerMenu, inventory: Inventory, title
         img(TEXTURE, guiWidth, guiHeight)
     }
 
-    val dec = BountifulContent.Decrees.find { it.id == "fletcher" }!!
-
-    private val overallMaxWorth = dec.rewardPools.maxOf { pool ->
-        pool.items.maxOf {
-            println("${it.id}: ${it.amount.max * it.unitWorth}")
-            it.amount.max * it.unitWorth
-        }
-    }
-
     private var poolWidgets = listOf<AnalyzerPoolWidget>()
+
+    private var statusMessage: Component? = Component.translatable("bountiful.analyzer.place_decree")
+
+    // The decree slot can change through several menu paths (clicks, quick moves, server syncs), so the screen
+    // compares the slot contents each frame instead of relying on one specific Slot method being called
+    private var lastSeenStack: ItemStack = ItemStack.EMPTY
+
+    /** Number of pool charts currently shown. */
+    fun chartCount() = poolWidgets.size
+
+    fun toggleMode() {
+        showMode = Mode.entries[(showMode.ordinal + 1) % Mode.entries.size]
+        refreshWidgets()
+    }
 
     enum class Mode(val symbol: String) {
         OBJ("O"),
@@ -48,33 +54,45 @@ class AnalyzerScreen(handler: AbstractContainerMenu, inventory: Inventory, title
 
     val modeClicker = MouseReactor().apply {
         onClickDown = { relX: Int, relY: Int, button: Int ->
-            showMode = Mode.entries[(showMode.ordinal + 1) % Mode.entries.size]
-            refreshWidgets()
+            toggleMode()
         }
     }
 
     fun refreshWidgets() {
+        Bountiful.LOGGER.debug("Refreshing analyzer widgets")
 
-        println("Refreshing widgets")
+        val analyzerMenu = (menu as? AnalyzerScreenHandler) ?: return
 
+        val slotStack = analyzerMenu.container.getItem(0)
+        lastSeenStack = slotStack.copy()
 
-        val doot = (menu as? AnalyzerScreenHandler) ?: return
+        val decreeIds = slotStack[BountifulContent.DECREE_DATA]?.ids
+        if (decreeIds.isNullOrEmpty()) {
+            // Nothing (or a decree that has not been set yet) in the slot: no charts
+            poolWidgets = emptyList()
+            statusMessage = Component.translatable(
+                if (slotStack.isEmpty) "bountiful.analyzer.place_decree" else "bountiful.decree.notset"
+            )
+            return
+        }
 
-        val di = doot.container.getItem(0)[BountifulContent.DECREE_DATA] ?: return
-
-        val decrees = di.ids.mapNotNull { BountifulContent.Decrees.find { d -> d.id == it } }
+        val decrees = decreeIds.mapNotNull { id -> BountifulContent.Decrees.find { d -> d.id == id } }
 
         val allPools = decrees.map {
             if (showMode == Mode.OBJ) it.objectivePools else it.rewardPools
         }.flatten().toSet().toList()
+        statusMessage = if (allPools.isEmpty()) Component.translatable("bountiful.analyzer.no_pools") else null
+
+        // Scale every chart to the most valuable entry of the pools being displayed
+        val maxWorth = allPools.maxOfOrNull { pool ->
+            pool.items.maxOfOrNull { it.amount.max * it.unitWorth } ?: 0.0
+        }?.takeIf { it > 0.0 } ?: 1.0
 
         poolWidgets = allPools.map {
-            //val heightBuff = if (it == allPools.last()) (64 - 64/allPools.size) else 0
-            AnalyzerPoolWidget(it, overallMaxWorth, scanResolution, 64 / allPools.size + 0)
+            AnalyzerPoolWidget(it, maxWorth, scanResolution, 64 / allPools.size)
         }.sortedBy {
             it.pool.id
         }
-
     }
 
     // 18x43
@@ -100,6 +118,12 @@ class AnalyzerScreen(handler: AbstractContainerMenu, inventory: Inventory, title
                         tooltip {
                             add(Component.translatable("bountiful.analyzer.mode.tooltip", showMode.symbol))
                         }
+                    }
+                }
+
+                statusMessage?.let { message ->
+                    text(12, 22) {
+                        add(message)
                     }
                 }
 
@@ -141,6 +165,10 @@ class AnalyzerScreen(handler: AbstractContainerMenu, inventory: Inventory, title
     }
 
     override fun onDrawForeground(context: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
+        val currentStack = (menu as? AnalyzerScreenHandler)?.container?.getItem(0) ?: ItemStack.EMPTY
+        if (!ItemStack.matches(currentStack, lastSeenStack)) {
+            refreshWidgets()
+        }
         fgGui.draw(context, mouseX, mouseY, delta)
     }
 

@@ -108,6 +108,8 @@
 	"bountiful.analyzer.mode.tooltip": "Click to change mode (Current: %1$s)",
 	"bountiful.analyzer.sample_resolution": "Sample Resolution",
 	"bountiful.analyzer.pool": "Pool: %1$s",
+	"bountiful.analyzer.place_decree": "Place a Decree in the slot",
+	"bountiful.analyzer.no_pools": "This decree has no pools in this mode",
 	"bountiful.analyzer.entries_at_worth_range": "Entries at worth range %1$s-%2$s: %3$s",
 
 	"bountiful.command.none": "None",
