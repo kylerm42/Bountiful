@@ -15,6 +15,9 @@ import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper
 import net.fabricmc.fabric.api.resource.ResourcePackActivationType
 import net.fabricmc.loader.api.FabricLoader
+import io.ejekta.bountiful.content.villager.RandomDecreeFunction
+import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
 import net.minecraft.server.packs.PackType
 
@@ -78,9 +81,9 @@ class BountifulModFabric : ModInitializer {
             Bountybridge.handleEntityKills(world, entity, killedEntity)
         })
 
-        // TODO(26.1.2): Fabric API 0.155.3+26.1.2 has no TradeOfferHelper (trades are data-driven in vanilla).
-        //  Wandering trader decree trades are therefore NOT registered on Fabric until reimplemented.
-        //  Previously: TradeOfferHelper.registerWanderingTraderOffers(1) { it.add { e, r -> DecreeTradeFactory.createOffer(e, r) } }
+        // Wandering trader decree trades are data-driven in 26.x: see data/bountiful/villager_trade/wandering_trader
+        // (appended to #minecraft:wandering_trader/common). The trades need this loot function to roll the decree contents.
+        Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, Bountiful.id("random_decree"), RandomDecreeFunction.CODEC)
 
         for ((group, items) in Bountybridge.getItemGroups()) {
             CreativeModeTabEvents.modifyOutputEvent(group).register(CreativeModeTabEvents.ModifyOutput { output ->

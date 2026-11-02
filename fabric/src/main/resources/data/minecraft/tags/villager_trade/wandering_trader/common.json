@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "bountiful:wandering_trader/decree_1",
+    "bountiful:wandering_trader/decree_2",
+    "bountiful:wandering_trader/decree_3",
+    "bountiful:wandering_trader/decree_4"
+  ]
+}

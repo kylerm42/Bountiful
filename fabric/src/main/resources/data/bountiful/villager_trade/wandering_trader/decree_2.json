@@ -1,0 +1,18 @@
+{
+  "given_item_modifiers": [
+    {
+      "function": "bountiful:random_decree",
+      "count": 2
+    }
+  ],
+  "gives": {
+    "id": "bountiful:decree"
+  },
+  "max_uses": 1,
+  "reputation_discount": 0.1,
+  "wants": {
+    "id": "minecraft:emerald",
+    "count": 3
+  },
+  "xp": 1
+}
