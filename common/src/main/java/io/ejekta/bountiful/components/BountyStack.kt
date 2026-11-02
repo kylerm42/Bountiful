@@ -104,6 +104,8 @@ class BountyStack(val stack: ItemStack) {
         return if (hasFinishedObjectives(player)) {
             consumeObjectives(player)
             rewardPlayer(player)
+            // Turning a bounty in is the completion moment: tell the owning client to show the toast and play the sound
+            (player as? ServerPlayer)?.let { OnBountyComplete(1f, 1f, turnedIn = true).sendToClient(it) }
             true
         } else {
             player.sendSystemMessage(Component.translatable("bountiful.tooltip.requirements"))

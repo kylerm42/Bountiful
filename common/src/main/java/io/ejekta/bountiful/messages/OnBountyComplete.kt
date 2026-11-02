@@ -14,7 +14,9 @@ import net.minecraft.world.entity.player.Player
 @Serializable
 data class OnBountyComplete(
     private val volume: Float,
-    private val pitch: Float
+    private val pitch: Float,
+    // True when sent because the bounty was handed in (as opposed to its objectives becoming complete)
+    private val turnedIn: Boolean = false
 ) : KambrikMsg() {
     override fun onClientReceived() {
         runLocally(ctx.player!!)
@@ -29,7 +31,7 @@ data class OnBountyComplete(
                 ctx.gui.toastManager(),
                 SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                 Component.translatable("bountiful.toast.complete"),
-                Component.translatable("bountiful.toast.complete.desc")
+                Component.translatable(if (turnedIn) "bountiful.toast.turnedin.desc" else "bountiful.toast.complete.desc")
             )
         }
     }

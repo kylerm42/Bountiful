@@ -8,6 +8,7 @@
 
 	"bountiful.toast.complete": "Bounty Complete!",
 	"bountiful.toast.complete.desc": "Turn in at a Bounty Board!",
+	"bountiful.toast.turnedin.desc": "Rewards received!",
 
 	"bountiful.nightly.warning": "This is a Nightly build of Bountiful. Please do not distribute it in modpacks. Please report issues in the Discord!",
 

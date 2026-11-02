@@ -8,6 +8,10 @@ import io.ejekta.kambrik.bridge.Kambridge
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.item.component.TooltipDisplay
@@ -50,6 +54,13 @@ class BountyItem(props: Properties) : Item(
         return text
     }
 
+    override fun inventoryTick(stack: ItemStack, level: ServerLevel, owner: Entity, slot: EquipmentSlot?) {
+        // Item objectives are not event driven, so poll: alert once (BountyStack.ping) when the objectives become met
+        if (owner is ServerPlayer && owner.tickCount % COMPLETION_CHECK_INTERVAL_TICKS == 0) {
+            BountyStack(stack).checkForCompletionAndAlert(owner)
+        }
+    }
+
     fun tryCashIn(player: Player, stack: ItemStack): Boolean {
         return BountyStack(stack).tryCashIn(player)
     }
@@ -68,6 +79,10 @@ class BountyItem(props: Properties) : Item(
             context.player?.sendOverlayMessage(Component.translatable("bountiful.bounty.turnin"))
         }
         return InteractionResult.PASS
+    }
+
+    companion object {
+        private const val COMPLETION_CHECK_INTERVAL_TICKS = 10
     }
 
     override fun appendHoverText(
