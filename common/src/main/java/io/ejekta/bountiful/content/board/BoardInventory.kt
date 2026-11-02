@@ -29,7 +29,6 @@ class BoardInventory(
     }
 
     override fun canPlaceItem(slot: Int, stack: ItemStack): Boolean {
-        println("Validity check")
         return slot < 0 || super.canPlaceItem(slot, stack)
     }
 

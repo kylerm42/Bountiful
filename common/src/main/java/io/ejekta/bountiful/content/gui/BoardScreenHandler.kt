@@ -69,6 +69,11 @@ class BoardScreenHandler @JvmOverloads constructor(
         if (pPlayer is ServerPlayer) {
             val stack = getSlot(invSlot).item
 
+            if (invSlot in BoardInventory.BOUNTY_RANGE) {
+                // Quick-moving does not go through Slot.onTake, so mask the taken bounty here (before it is modified)
+                pPlayer.currentBoardInteracting?.maskMatching(pPlayer, stack)
+            }
+
             if (stack.item is BountyItem) {
                 BountyStack(stack).setPickedUp(pPlayer.level().gameTime)
             }

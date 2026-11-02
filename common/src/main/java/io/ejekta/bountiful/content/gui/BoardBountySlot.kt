@@ -23,19 +23,8 @@ class BoardBountySlot(private val inv: BoardInventory, val usingPlayer: Player, 
     override fun onTake(player: Player, stack: ItemStack) {
         if (player is ServerPlayer) {
             val board = player.level().getBlockEntity(inv.pos) as? BoardBlockEntity ?: return
-            // Mask all matching bounties
-            val matchingMaskIndices = board.fullInventoryCopy().readOnlyCopy
-                .mapIndexed { indexI, itemStack ->
-                    if (ItemStack.isSameItemSameComponents(item, itemStack)) {
-                        indexI
-                    } else {
-                        null
-                    }
-                }.filterNotNull()
-            // Add to mask
-            for (newIndex in matchingMaskIndices) {
-                board.maskFor(player).add(newIndex)
-            }
+            // Mask all matching bounties. Use the taken stack: at this point the slot itself is already empty.
+            board.maskMatching(player, stack)
         }
         if (stack.item is BountyItem) {
             BountyStack(stack).setPickedUp(player.level().gameTime)

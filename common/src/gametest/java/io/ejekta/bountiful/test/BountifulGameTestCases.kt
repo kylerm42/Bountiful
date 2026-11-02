@@ -8,6 +8,11 @@ import io.ejekta.bountiful.content.BountifulContent
 import io.ejekta.bountiful.content.BountyCreator
 import io.ejekta.bountiful.content.board.BoardBlockEntity
 import io.ejekta.bountiful.content.board.BoardInventory
+import io.ejekta.bountiful.content.gui.BoardScreenHandler
+import net.minecraft.world.inventory.ContainerInput
+import net.minecraft.network.HashedPatchMap
+import net.minecraft.network.HashedStack
+import net.minecraft.util.HashOps
 import io.ejekta.bountiful.content.item.BountyItem
 import io.ejekta.bountiful.content.item.DecreeItem
 import io.ejekta.bountiful.data.Decree
@@ -164,6 +169,95 @@ object BountifulGameTestCases {
                 "Serialized player data should preserve which player claimed the slot"
             )
             BountifulIO.configData.board.updateFrequencySecs = originalFrequency
+        }
+    }
+
+    /**
+     * Regression test for "a taken bounty shows up again when the board is re-opened": takes a bounty through the
+     * real menu click path (select + pick up the active slot) and checks the next menu the player opens no longer
+     * offers it, while another player still sees it.
+     */
+    fun takenBountyIsNotOfferedAgain(helper: GameTestHelper) {
+        val originalFrequency = BountifulIO.configData.board.updateFrequencySecs
+        BountifulIO.configData.board.updateFrequencySecs = 1
+        helper.setBlock(boardPos, BountifulContent.BOARD.value)
+
+        helper.succeedWhen {
+            val board = helper.getBlockEntity(boardPos, BoardBlockEntity::class.java)
+            helper.assertTrue(
+                BountifulTestSupport.bountyStacks(board).any { it.item is BountyItem },
+                "Board should have generated a bounty before taking one"
+            )
+            BountifulIO.configData.board.updateFrequencySecs = originalFrequency
+
+            val player = helper.makeMockServerPlayerInLevel()
+            val otherPlayer = helper.makeMockServerPlayerInLevel()
+
+            val menu = board.createMenu(1, player.inventory, player) as BoardScreenHandler
+            val slot = BoardInventory.BOUNTY_RANGE.first { !menu.container.getItem(it).isEmpty }
+            menu.container.select(slot)
+            val activeSlot = menu.slots.size - 1
+            menu.clicked(activeSlot, 0, ContainerInput.PICKUP, player)
+
+            helper.assertTrue(menu.carried.item is BountyItem, "The taken bounty should be on the cursor")
+
+            val reopened = board.createMenu(2, player.inventory, player) as BoardScreenHandler
+            helper.assertTrue(reopened.container.getItem(slot).isEmpty, "A taken bounty must not be offered to the same player again")
+
+            val otherView = board.createMenu(3, otherPlayer.inventory, otherPlayer) as BoardScreenHandler
+            helper.assertFalse(otherView.container.getItem(slot).isEmpty, "Other players should still be offered the bounty")
+        }
+    }
+
+    /**
+     * Regression test for the "mouseReleased event handler" crash when moving a bounty in an inventory: the client
+     * hashes every changed stack's components (CRC32C HashOps) for container click packets, which Percale-backed
+     * component codecs used to reject ("Unknown ops type").
+     */
+    fun bountyAndDecreeComponentsCanBeHashedForContainerClicks(helper: GameTestHelper) {
+        val hashOps = helper.level.registryAccess().createSerializationContext(HashOps.CRC32C_INSTANCE)
+        val hasher = HashedPatchMap.HashGenerator { component ->
+            component.encodeValue(hashOps)
+                .getOrThrow { msg -> IllegalArgumentException("Failed to hash $component: $msg") }
+                .asInt()
+        }
+
+        // Objectives carrying extra data (e.g. entity NBT) are encoded through a Codec-backed serializer
+        val bountyStack = BountifulTestSupport.makeItemBounty(helper.level, Items.WHEAT, 4)
+        bountyStack.objs = bountyStack.objs.map { it.copy(data = com.google.gson.JsonObject().apply { addProperty("example", 1) }) }
+        val bounty = bountyStack.stack
+        val decree = DecreeItem.createWithAllDecrees()
+        for (stack in listOf(bounty, decree)) {
+            val hashed = HashedStack.create(stack, hasher)
+            helper.assertTrue(hashed is HashedStack.ActualItem, "Stack ${stack.item} should be hashable")
+            helper.assertTrue(hashed.matches(stack, hasher), "Hashed stack should match the stack it was created from")
+        }
+
+        helper.succeed()
+    }
+
+    // Shift-clicking a bounty out of the board takes the same path as a normal take for masking purposes
+    fun quickMovedBountyIsNotOfferedAgain(helper: GameTestHelper) {
+        val originalFrequency = BountifulIO.configData.board.updateFrequencySecs
+        BountifulIO.configData.board.updateFrequencySecs = 1
+        helper.setBlock(boardPos, BountifulContent.BOARD.value)
+
+        helper.succeedWhen {
+            val board = helper.getBlockEntity(boardPos, BoardBlockEntity::class.java)
+            helper.assertTrue(
+                BountifulTestSupport.bountyStacks(board).any { it.item is BountyItem },
+                "Board should have generated a bounty before taking one"
+            )
+            BountifulIO.configData.board.updateFrequencySecs = originalFrequency
+
+            val player = helper.makeMockServerPlayerInLevel()
+            val menu = board.createMenu(1, player.inventory, player) as BoardScreenHandler
+            player.containerMenu = menu
+            val slot = BoardInventory.BOUNTY_RANGE.first { !menu.container.getItem(it).isEmpty }
+            menu.quickMoveStack(player, slot)
+
+            val reopened = board.createMenu(2, player.inventory, player) as BoardScreenHandler
+            helper.assertTrue(reopened.container.getItem(slot).isEmpty, "A quick-moved bounty must not be offered to the same player again")
         }
     }
 

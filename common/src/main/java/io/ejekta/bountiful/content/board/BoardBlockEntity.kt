@@ -72,6 +72,16 @@ class BoardBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(Bountiful
         return this[player].taken
     }
 
+    // Mark every bounty slot matching the taken stack as taken by this player, so it is no longer offered to them
+    fun maskMatching(player: Player, taken: ItemStack) {
+        if (taken.isEmpty) return
+        val matching = BoardInventory.BOUNTY_RANGE.filter {
+            ItemStack.isSameItemSameComponents(taken, activeState.bounties.getItem(it))
+        }
+        maskFor(player).addAll(matching)
+        markStateDirty()
+    }
+
     private fun clearMask(slot: Int) {
         // Clear mask because slot was updated
         activeState.playerData.forEach { (_, data) ->
@@ -274,7 +284,7 @@ class BoardBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(Bountiful
         if (newStack.count == 0) {
             return
         }
-        val newDecrees = newStack[BountifulContent.DECREE_DATA]!!.ids
+        val newDecrees = newStack[BountifulContent.DECREE_DATA]?.ids ?: return
         val decs = getBoardDecrees().map { it.id }.toSet() + newDecrees
         val allDecreesSet = BountifulContent.Decrees.map { it.id }.toSet()
         val allDecrees = decs.intersect(allDecreesSet) == allDecreesSet

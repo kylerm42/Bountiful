@@ -39,6 +39,15 @@ class BountifulFabricGameTest {
     @GameTest
     fun maskedPlayersDoNotSeeTakenBounties(helper: GameTestHelper) = BountifulGameTestCases.maskedPlayersDoNotSeeTakenBounties(helper)
 
+    @GameTest
+    fun takenBountyIsNotOfferedAgain(helper: GameTestHelper) = BountifulGameTestCases.takenBountyIsNotOfferedAgain(helper)
+
+    @GameTest
+    fun bountyAndDecreeComponentsCanBeHashedForContainerClicks(helper: GameTestHelper) = BountifulGameTestCases.bountyAndDecreeComponentsCanBeHashedForContainerClicks(helper)
+
+    @GameTest
+    fun quickMovedBountyIsNotOfferedAgain(helper: GameTestHelper) = BountifulGameTestCases.quickMovedBountyIsNotOfferedAgain(helper)
+
     /**
      * Wandering trader offers are generated lazily and randomly, so instead of waiting for a trader that happens
      * to roll a decree this checks the data-driven decree trades directly: all four tiers are in the trader's
