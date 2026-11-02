@@ -9,7 +9,6 @@ import io.ejekta.bountiful.content.board.BoardBlockEntity
 import io.ejekta.bountiful.content.gui.BoardScreenHandler
 import io.ejekta.bountiful.content.item.BountyItem
 import io.ejekta.kambrik.message.KambrikMsg
-import kotlinx.serialization.json.JsonElement
 import net.minecraft.client.Minecraft
 import net.minecraft.core.*
 import net.minecraft.core.registries.BuiltInRegistries

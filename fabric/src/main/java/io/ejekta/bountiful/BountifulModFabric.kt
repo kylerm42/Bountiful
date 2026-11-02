@@ -5,14 +5,12 @@ import io.ejekta.bountiful.config.BountifulIO
 import io.ejekta.bountiful.config.BountifulReloadListener
 import io.ejekta.bountiful.content.BountifulCommands
 import io.ejekta.bountiful.content.BountifulContent
-import io.ejekta.bountiful.content.villager.DecreeTradeFactory
 import io.ejekta.kambrik.registration.KambrikRegistrar
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityCombatEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents
-import net.fabricmc.fabric.api.object.builder.v1.trade.TradeOfferHelper
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper
 import net.fabricmc.fabric.api.resource.ResourcePackActivationType
 import net.fabricmc.loader.api.FabricLoader
@@ -78,9 +76,9 @@ class BountifulModFabric : ModInitializer {
             Bountybridge.handleEntityKills(world, entity, killedEntity)
         })
 
-        TradeOfferHelper.registerWanderingTraderOffers(1) { factories ->
-            factories.add { entity, random -> DecreeTradeFactory.createOffer(entity, random) }
-        }
+        // TODO(26.1.2): Fabric API 0.155.3+26.1.2 has no TradeOfferHelper (trades are data-driven in vanilla).
+        //  Wandering trader decree trades are therefore NOT registered on Fabric until reimplemented.
+        //  Previously: TradeOfferHelper.registerWanderingTraderOffers(1) { it.add { e, r -> DecreeTradeFactory.createOffer(e, r) } }
 
         for ((group, items) in Bountybridge.getItemGroups()) {
             CreativeModeTabEvents.modifyOutputEvent(group).register(CreativeModeTabEvents.ModifyOutput { output ->

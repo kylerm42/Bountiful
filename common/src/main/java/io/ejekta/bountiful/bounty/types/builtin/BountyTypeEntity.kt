@@ -15,6 +15,8 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
+import net.minecraft.util.ProblemReporter
+import net.minecraft.world.level.storage.TagValueOutput
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.LivingEntity
@@ -59,7 +61,9 @@ class BountyTypeEntity : IBountyObjective {
                 for (obj in entityObjs) {
                     if (obj.content == killedEntity.type.id.toString()) {
                         val nbtMatches = obj.data?.let { reqData ->
-                            val entityNbt = CompoundTag().also { killedEntity.saveWithoutId(it) }
+                            val entityNbt = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, killedEntity.registryAccess())
+                                .also { killedEntity.saveWithoutId(it) }
+                                .buildResult()
                             val entityJson = NbtOps.INSTANCE.convertTo(JsonOps.INSTANCE, entityNbt).asJsonObject
                             isJsonSubset(reqData, entityJson)
                         } ?: true

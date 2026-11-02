@@ -77,7 +77,8 @@ tasks.named('processGametestResources') {
 
 tasks.named('jar', Jar) {
     dependsOn(tasks.named('processResources'))
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    // INCLUDE wrote fabric.mod.json twice, which Loom's manifest step rejects ("duplicate entry")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("$buildDir/resources/main") {
         include('fabric.mod.json')
     }

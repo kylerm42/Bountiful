@@ -94,7 +94,7 @@ object BountifulContent : KambrikAutoRegistrar {
 
     val MEM_MODULE_NEAREST_BOARD by MEM_MODULE_NEAREST_BOARD_INSTANCE
 
-    val POI_BOUNTY_BOARD = "bountyboard".forVillagerPoi(setOf(BOARD.value.defaultState), 1, 1)
+    val POI_BOUNTY_BOARD = "bountyboard".forVillagerPoi(setOf(BOARD.value.defaultBlockState()), 1, 1)
 
     val BOUNTY_INFO by "bounty_info".forComponent(BountyInfo.serializer())
     val BOUNTY_PING by "bounty_ping".forComponent(Boolean.serializer())
