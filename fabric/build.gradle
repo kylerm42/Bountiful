@@ -28,13 +28,37 @@ repositories {
         name = "Architectury Maven"
         url = uri("https://maven.architectury.dev/")
     }
+    // Cloth Config (optional dependency) from the Modrinth Maven
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = uri("https://api.modrinth.com/maven")
+            }
+        }
+        filter {
+            includeGroup("maven.modrinth")
+        }
+    }
 }
 
 dependencies {
     implementation("io.ejekta.kambrik:kambrik-fabric-${minecraft_version}:${kambrik_version}")
     implementation("io.ejekta.percale:percale-fabric-${minecraft_version}:${percale_version}")
     // Dev-environment only; ModMenu is never a hard dependency of the mod itself
-    runtimeOnly "com.terraformersmc:modmenu:${mod_menu_version}"
+    // Pass -PnoOptionalMods to leave ModMenu and Cloth Config out of dev runs (tests starting without them)
+    if (!project.hasProperty('noOptionalMods')) {
+        runtimeOnly "com.terraformersmc:modmenu:${mod_menu_version}"
+    }
+    // Cloth Config is optional at runtime (fabric.mod.json "suggests"): only the config screen in the client
+    // entrypoint package references it, and ModMenu only loads that class when Cloth is present
+    compileOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
+    if (!project.hasProperty('noOptionalMods')) {
+        runtimeOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
+    }
+    gametestCompileOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
+    gametestCompileOnly "com.terraformersmc:modmenu:${mod_menu_version}"
+    compileOnly "com.terraformersmc:modmenu:${mod_menu_version}"
 }
 
 loom {

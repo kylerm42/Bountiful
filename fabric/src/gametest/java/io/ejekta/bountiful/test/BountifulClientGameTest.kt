@@ -16,6 +16,18 @@ import io.ejekta.bountiful.content.gui.EditorScreenHandler
 import io.ejekta.bountiful.content.item.DecreeItem
 import io.ejekta.bountiful.messages.ClientPlayerStatus
 import io.ejekta.bountiful.messages.OnBountyComplete
+import com.mojang.blaze3d.platform.InputConstants
+import com.terraformersmc.modmenu.ModMenu
+import io.ejekta.bountiful.chaos.ChaosModeOption
+import io.ejekta.bountiful.config.BountifulConfigScreen
+import io.ejekta.bountiful.config.BountifulIO
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import me.shedaniel.clothconfig2.gui.ClothConfigScreen
+import me.shedaniel.clothconfig2.gui.entries.EnumListEntry
+import net.minecraft.client.gui.components.AbstractWidget
+import kotlin.io.path.readText
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
@@ -141,8 +153,106 @@ class BountifulClientGameTest : FabricClientGameTest {
             context.waitForScreen(EditorScreen::class.java)
             context.waitTicks(5)
             context.takeScreenshot("editor_screen")
+
+            testConfigScreen(context)
         }
     }
+
+    /**
+     * Opens the Cloth Config screen (ModMenu itself can't be driven from here, so the screen is created the same way
+     * [io.ejekta.bountiful.config.BountifulModMenu] does), switches Chaos Mode with a real click on the selector,
+     * saves, and asserts on both the in-memory config and bountiful.json.
+     */
+    private fun testConfigScreen(context: ClientGameTestContext) {
+        check(BountifulIO.configData.chaos.mode == ChaosModeOption.OFF) { "Test setup: chaos mode should start OFF" }
+
+        // ModMenu must offer a config screen for Bountiful (this is what enables its "Configure" button)
+        check(ModMenu.hasConfigScreen("bountiful")) { "ModMenu does not offer a config screen for bountiful" }
+        context.runOnClient<RuntimeException> { mc ->
+            val screen = ModMenu.getConfigScreen("bountiful", null)
+            check(screen is ClothConfigScreen) { "ModMenu returned $screen instead of the Cloth config screen" }
+            mc.gui.setScreen(screen)
+        }
+        context.waitForScreen(ClothConfigScreen::class.java)
+        context.waitTicks(5)
+        context.takeScreenshot("config_screen_general")
+
+        // One tab per category, every Bountiful option reachable
+        val categories = context.computeOnClient<List<String>, RuntimeException> { mc ->
+            (mc.gui.screen() as ClothConfigScreen).categorizedEntries.keys.map { it.string }
+        }
+        check(categories.size == 6) { "Expected 6 config categories, got $categories" }
+
+        // Bounty category (longest list): shows the sliders and text fields render
+        selectCategory(context, categories.indexOf("General - Bounty"))
+        context.takeScreenshot("config_screen_bounty")
+
+        // Chaos category: the enum selector with its tooltip
+        selectCategory(context, categories.indexOf("Chaos Mode"))
+        val button = context.computeOnClient<DoubleArray, RuntimeException> { mc ->
+            val screen = mc.gui.screen() as ClothConfigScreen
+            val entry = chaosEntry(screen)
+            val widget = entry.children().filterIsInstance<AbstractWidget>().first()
+            val scale = mc.window.guiScale.toDouble()
+            doubleArrayOf((widget.x + widget.width / 2) * scale, (widget.y + widget.height / 2) * scale)
+        }
+        // Hover the selector so the tooltip with the three modes is drawn
+        context.input.setCursorPos(button[0], button[1])
+        context.waitTicks(30)
+        context.takeScreenshot("config_screen_chaos_tooltip")
+
+        // Click: OFF -> ON
+        context.input.pressMouse(InputConstants.MOUSE_BUTTON_LEFT)
+        context.waitTicks(3)
+        val shown = context.computeOnClient<ChaosModeOption, RuntimeException> { mc ->
+            chaosEntry(mc.gui.screen() as ClothConfigScreen).value as ChaosModeOption
+        }
+        check(shown == ChaosModeOption.ON) { "Clicking the chaos selector should switch OFF -> ON, but it shows $shown" }
+        // Move the cursor off the selector so the tooltip doesn't cover the new value
+        context.input.setCursorPos(button[0], button[1] - 120.0)
+        context.waitTicks(10)
+        context.takeScreenshot("config_screen_chaos_on")
+
+        // Save through the screen (what the "Save & Quit" button runs)
+        context.runOnClient<RuntimeException> { mc -> (mc.gui.screen() as ClothConfigScreen).saveAll(true) }
+        context.waitTicks(5)
+
+        check(BountifulIO.configData.chaos.mode == ChaosModeOption.ON) {
+            "In-memory chaos mode should be ON after saving, but is ${BountifulIO.configData.chaos.mode}"
+        }
+        val file = BountifulIO.rootFolder.resolve("bountiful.json")
+        val json = Json.parseToJsonElement(file.readText()).jsonObject
+        val onDisk = json["chaos"]?.jsonObject?.get("mode")?.jsonPrimitive?.content
+        check(onDisk == "ON") { "bountiful.json should contain chaos.mode ON, but it contains $onDisk" }
+
+        // Reopening the screen shows the persisted value
+        context.runOnClient<RuntimeException> { mc -> mc.gui.setScreen(BountifulConfigScreen.buildScreen(null)) }
+        context.waitForScreen(ClothConfigScreen::class.java)
+        val reopened = context.computeOnClient<ChaosModeOption, RuntimeException> { mc ->
+            chaosEntry(mc.gui.screen() as ClothConfigScreen).value as ChaosModeOption
+        }
+        check(reopened == ChaosModeOption.ON) { "Reopened config screen should show chaos mode ON, but shows $reopened" }
+
+        // Restore the default so the run directory is left as it was
+        BountifulIO.configData.chaos.mode = ChaosModeOption.OFF
+        BountifulIO.reloadConfig()
+        context.runOnClient<RuntimeException> { mc -> mc.gui.setScreen(null) }
+    }
+
+    private fun selectCategory(context: ClientGameTestContext, index: Int) {
+        check(index >= 0) { "Config category not found" }
+        context.runOnClient<RuntimeException> { mc ->
+            val screen = mc.gui.screen() as ClothConfigScreen
+            screen.selectedCategoryIndex = index
+            // Rebuild the widgets for the selected category
+            mc.gui.setScreen(screen)
+            screen.resize(mc.window.guiScaledWidth, mc.window.guiScaledHeight)
+        }
+        context.waitTicks(5)
+    }
+
+    private fun chaosEntry(screen: ClothConfigScreen): EnumListEntry<*> =
+        screen.categorizedEntries.values.flatten().filterIsInstance<EnumListEntry<*>>().single()
 
     private fun toastShown(context: ClientGameTestContext): Boolean = context.computeOnClient<Boolean, RuntimeException> { mc ->
         mc.gui.toastManager().getToast(SystemToast::class.java, SystemToast.SystemToastId.PERIODIC_NOTIFICATION) != null
