@@ -160,6 +160,16 @@ tasks.named('runGameTestServer') {
     }
 }
 
+tasks.named('runServer') {
+    // -PextraMods=/dir/with/jars loads further mods (for example Lithostitched, Towns and Towers and Cristel Lib)
+    doFirst {
+        if (project.hasProperty('extraMods')) {
+            def jars = file(project.property('extraMods')).listFiles().findAll { it.name.endsWith('.jar') }.collect { it.absolutePath }
+            jvmArgs("-Dfabric.addMods=${jars.join(File.pathSeparator)}")
+        }
+    }
+}
+
 tasks.named('runClientGameTest') {
     dependsOn(tasks.named('gametestClasses'))
     def runDirectory = file("$buildDir/run/clientGameTest")
