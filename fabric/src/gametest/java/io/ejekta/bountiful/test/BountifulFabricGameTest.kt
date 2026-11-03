@@ -83,6 +83,69 @@ class BountifulFabricGameTest {
     }
 
     /**
+     * Towns and Towers (mod id `t_and_t`) villages: the same quota as [villageBoardsHonorGenFrequency] for every
+     * in-scope village (see TAT_VILLAGES). Without Towns and Towers on the classpath the structures are not
+     * registered and the test passes vacuously, unless `-Dbountiful.requireTat=true` (set by Gradle whenever the
+     * mods are loaded) turns a missing structure into a failure.
+     */
+    @GameTest
+    fun townsAndTowersBoardsHonorGenFrequency(helper: GameTestHelper) {
+        val board = io.ejekta.bountiful.config.BountifulIO.configData.board
+        val original = board.villageGenFrequency
+        val samples = (System.getProperty("bountiful.villageSamples") ?: "24").toInt()
+        val requireTat = System.getProperty("bountiful.requireTat") == "true"
+        val failures = mutableListOf<String>()
+        try {
+            for (freq in listOf(1.0f, 2.5f, 0.0f)) {
+                board.villageGenFrequency = freq
+                val min = kotlin.math.floor(freq.toDouble()).toInt()
+                val max = kotlin.math.ceil(freq.toDouble()).toInt()
+                for (name in VillageBoardCounts.TAT_VILLAGES) {
+                    val counts = VillageBoardCounts.count(helper.level, name, samples)
+                    if (counts == null) {
+                        if (requireTat) failures += "$name is not registered although Towns and Towers should be loaded"
+                        continue
+                    }
+                    val pieces = VillageBoardCounts.lastPieceTotals
+                    println("TAT-BOARDS freq=$freq $name ${VillageBoardCounts.summary(counts)} pieces=${pieces.minOrNull()}..${pieces.maxOrNull()} zombie=${VillageBoardCounts.zombieVillages}")
+                    if (counts.isEmpty()) failures += "$name freq=$freq: no valid village generated in $samples samples"
+                    if (counts.any { it !in min..max }) failures += "$name freq=$freq: expected $min..$max boards per village, got $counts"
+                }
+            }
+        } finally {
+            board.villageGenFrequency = original
+        }
+        helper.assertTrue(failures.isEmpty(), failures.joinToString("; "))
+        helper.succeed()
+    }
+
+    /** Out-of-scope Towns and Towers structures (see TAT_OUT_OF_SCOPE) never get a board, even at a high frequency. */
+    @GameTest
+    fun townsAndTowersOutOfScopeStructuresHaveNoBoards(helper: GameTestHelper) {
+        val board = io.ejekta.bountiful.config.BountifulIO.configData.board
+        val original = board.villageGenFrequency
+        val samples = (System.getProperty("bountiful.villageSamples") ?: "24").toInt()
+        val requireTat = System.getProperty("bountiful.requireTat") == "true"
+        val failures = mutableListOf<String>()
+        try {
+            board.villageGenFrequency = 2.5f
+            for (name in VillageBoardCounts.TAT_OUT_OF_SCOPE) {
+                val counts = VillageBoardCounts.count(helper.level, name, samples)
+                if (counts == null) {
+                    if (requireTat) failures += "$name is not registered although Towns and Towers should be loaded"
+                    continue
+                }
+                println("TAT-OUT-OF-SCOPE $name ${if (counts.isEmpty()) "n=0" else VillageBoardCounts.summary(counts)}")
+                if (counts.any { it != 0 }) failures += "$name: expected no boards, got $counts"
+            }
+        } finally {
+            board.villageGenFrequency = original
+        }
+        helper.assertTrue(failures.isEmpty(), failures.joinToString("; "))
+        helper.succeed()
+    }
+
+    /**
      * Wandering trader offers are generated lazily and randomly, so instead of waiting for a trader that happens
      * to roll a decree this checks the data-driven decree trades directly: all four tiers are in the trader's
      * common trade tag and each one produces a decree with the tier's count.

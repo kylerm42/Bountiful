@@ -19,6 +19,10 @@ configurations {
     // placement for every jigsaw structure and Trek is the mod Bountiful's Lithostitched modifiers target, so
     // the village board tests must run with both. -PnoTrekTests leaves them out.
     trekTestMods { transitive = false }
+    // Lithostitched, needed by the Trek and Towns and Towers modifiers (present unless both -PnoTrekTests and
+    // -PnoTatTests are set), and Towns and Towers with its required Cristel Lib (-PnoTatTests leaves them out).
+    lithostitchedTestMods { transitive = false }
+    tatTestMods { transitive = false }
     gametestCompileOnly.extendsFrom(compileOnly)
     gametestImplementation.extendsFrom(implementation)
     gametestImplementation.extendsFrom(testImplementation)
@@ -60,9 +64,15 @@ dependencies {
     if (!project.hasProperty('noOptionalMods')) {
         runtimeOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
     }
+    if (!project.hasProperty('noTrekTests') || !project.hasProperty('noTatTests')) {
+        lithostitchedTestMods "maven.modrinth:lithostitched:${lithostitched_version}"
+    }
     if (!project.hasProperty('noTrekTests')) {
-        trekTestMods "maven.modrinth:lithostitched:${lithostitched_version}"
         trekTestMods "maven.modrinth:trek:${trek_version}"
+    }
+    if (!project.hasProperty('noTatTests')) {
+        tatTestMods "maven.modrinth:cristel-lib:${cristellib_version}"
+        tatTestMods "maven.modrinth:towns-and-towers:${tat_version}"
     }
     gametestCompileOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
     gametestCompileOnly "com.terraformersmc:modmenu:${mod_menu_version}"
@@ -136,7 +146,11 @@ tasks.named('runGameTestServer') {
     dependsOn(tasks.named('gametestClasses'))
     // Also -PextraMods=/dir/with/jars to load further mods
     doFirst {
-        def jars = configurations.trekTestMods.files.collect { it.absolutePath }
+        def jars = (configurations.lithostitchedTestMods.files + configurations.trekTestMods.files + configurations.tatTestMods.files)
+                .collect { it.absolutePath }
+        if (!configurations.tatTestMods.isEmpty()) {
+            jvmArgs('-Dbountiful.requireTat=true')
+        }
         if (project.hasProperty('extraMods')) {
             jars += file(project.property('extraMods')).listFiles().findAll { it.name.endsWith('.jar') }.collect { it.absolutePath }
         }

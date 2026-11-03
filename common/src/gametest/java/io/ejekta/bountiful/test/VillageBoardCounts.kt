@@ -24,6 +24,25 @@ object VillageBoardCounts {
         "trek:village/taiga", "trek:village/cherry", "trek:village/swamp_vanilla", "trek:village/mushroom"
     )
 
+    /** Towns and Towers villages that have a `houses` pool and therefore receive a board. */
+    val TAT_VILLAGES = listOf(
+        "badlands", "birch_forest", "flower_forest", "forest", "jungle", "meadow", "mushroom_fields",
+        "old_growth_taiga", "snowy_taiga", "sparse_jungle", "swamp", "wooded_badlands"
+    ).map { "towns_and_towers:village_$it" } + listOf(
+        "classic", "iberian", "mediterranean", "nilotic", "rustic", "swedish", "tudor"
+    ).map { "towns_and_towers:exclusives/village_$it" }
+
+    /**
+     * Towns and Towers structures that must stay boardless: villages without a `houses` pool, the ocean, piglin and
+     * wandering trader camp villages, and non-village structures.
+     */
+    val TAT_OUT_OF_SCOPE = listOf(
+        "village_beach", "village_grove", "village_snowy_slopes", "village_sunflower_plains", "village_savanna_plateau",
+        "village_ocean", "exclusives/village_piglin", "exclusives/village_wandering_trader_camp",
+        "pillager_outpost_badlands", "pillager_outpost_meadow", "exclusives/pillager_outpost_nilotic",
+        "mimic_desert", "wreckage_ocean"
+    ).map { "towns_and_towers:$it" }
+
     fun idOf(name: String): Identifier = if (':' in name) Identifier.parse(name) else Identifier.withDefaultNamespace(name)
 
     /** Boards per village for `samples` starts spread over the world; null when the structure is not registered. */
