@@ -37,4 +37,6 @@ dependencies {
     implementation("io.ejekta.kambrik:kambrik-common-${project.property("minecraft_version")}:${project.property("kambrik_version")}")
     implementation("io.ejekta.percale:percale-common-${project.property("minecraft_version")}:${project.property("percale_version")}")
     testImplementation(kotlin("test"))
+    // Unit tests may use plain Minecraft value classes (Identifier, ...); the NeoForm jar is only on main's compile classpath
+    testImplementation(files(sourceSets["main"].compileClasspath))
 }

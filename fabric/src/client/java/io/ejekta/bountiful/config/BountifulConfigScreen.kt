@@ -247,6 +247,7 @@ object BountifulConfigScreen {
                 tr("chaos.mode.tooltip_off"),
                 tr("chaos.mode.tooltip_on"),
                 tr("chaos.mode.tooltip_combined"),
+                tr("chaos.mode.tooltip_prices"),
                 tr("chaos.mode.tooltip_restart")
             ).setSaveConsumer {
                 config.chaos.mode = it

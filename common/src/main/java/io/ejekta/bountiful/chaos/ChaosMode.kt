@@ -33,6 +33,13 @@ class ChaosMode {
         chaosData = chaosFile.read()
         chaosInfo = chaosFileInfo.read()
 
+        // Seeds a fresh file (read() creates it empty) and repairs files that only hold null prices
+        val merged = ChaosDefaults.mergeDefaults(chaosData, ChaosDefaults.load())
+        Bountiful.LOGGER.info(
+            "Chaos: merged ${merged.required} required and ${merged.optional} optional prices, " +
+                "${merged.tags} tag, ${merged.regex} regex and ${merged.ignoreRegex} ignore rules from the bundled defaults"
+        )
+
         val solver = DepthSolver(server, chaosData, chaosInfo)
         solver.solveRequiredRecipes()
 
@@ -43,8 +50,10 @@ class ChaosMode {
         chaosFile.write(chaosData)
         chaosFileInfo.write(chaosInfo)
 
-        solver.sendToRegistries(combined)
+        val poolSize = solver.sendToRegistries(combined)
 
+        Bountiful.LOGGER.info("Chaos: $poolSize priced items in the pool")
+        Bountiful.LOGGER.info("Chaos: ${chaosInfo.unsolvedList.size} items unpriced, see config/bountiful/bountiful-chaos.json (entries with null)")
         Bountiful.LOGGER.info("Chaos sent!")
     }
 }

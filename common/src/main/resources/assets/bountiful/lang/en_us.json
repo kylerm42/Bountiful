@@ -247,6 +247,7 @@
 	"bountiful.config.chaos.mode.tooltip_off": "Off: Chaos Mode is disabled and only the normal decrees are used.",
 	"bountiful.config.chaos.mode.tooltip_on": "On: the generated chaos decree and pool replace all normal decrees and pools.",
 	"bountiful.config.chaos.mode.tooltip_combined": "Combined: the chaos decree and pool are added alongside the normal decrees and pools.",
+	"bountiful.config.chaos.mode.tooltip_prices": "Prices live in config/bountiful/bountiful-chaos.json. Entries with null are unpriced: fill them in to add those items.",
 	"bountiful.config.chaos.mode.tooltip_restart": "Takes effect the next time a world or server starts.",
 	"bountiful.config.debug.pack_mode": "Pack Mode (Does not Save)",
 	"bountiful.config.debug.pack_mode.tooltip": "Turns on Modpack Dev mode for Bountiful. Is not saved."

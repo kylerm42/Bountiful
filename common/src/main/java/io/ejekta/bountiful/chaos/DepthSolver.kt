@@ -48,22 +48,24 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
 
         for (item in BuiltInRegistries.ITEM) {
+            if (data.matching.isIgnored(item)) {
+                ignoreSet.add(item)
+                continue
+            }
             val matchCost = data.matching.matchCost(item, server)
             if (matchCost != null) {
-                if (!data.matching.isIgnored(item)) {
-                    Bountiful.LOGGER.debug("Adding match cost: ${item.id}")
-                    matchCosts[item] = matchCost
-                } else {
-                    ignoreSet.add(item)
-                }
+                Bountiful.LOGGER.debug("Adding match cost: ${item.id}")
+                matchCosts[item] = matchCost
             }
         }
 
-        for (itemId in data.required.filter { it.value != null }.keys) {
-            val item = BuiltInRegistries.ITEM.getOptional(itemId).getOrNull()
-            item?.let {
-                if (it !in matchCosts) {
-                    costMap[it] = data.required[itemId]!!
+        // Priced entries in `optional` act as fixed prices too; `required` wins when both are priced
+        for (prices in listOf(data.required, data.optional)) {
+            for ((itemId, price) in prices) {
+                if (price == null) continue
+                val item = BuiltInRegistries.ITEM.getOptional(itemId).getOrNull() ?: continue
+                if (item !in matchCosts && item !in costMap) {
+                    costMap[item] = price
                 }
             }
         }
@@ -74,7 +76,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
 
     private val RecipeHolder<*>.inItemSets: List<Set<ItemStack>>
         get() = this.value.placementInfo().ingredients().map { ingredient ->
-            ingredient.items().toList().map { holder -> ItemStack(holder.value()) }.toSet()
+            ingredient.items().toList().sortedBy { holder -> holder.value().id.toString() }.map { holder -> ItemStack(holder.value()) }.toSet()
         }
 
     private val displayContext = SlotDisplayContext.fromLevel(server.overworld())
@@ -85,7 +87,8 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         return stack.takeUnless { it.isEmpty }
     }
 
-    private val stackLookup = recipeManager.recipes.toList().mapNotNull { holder ->
+    // Recipes are sorted by id so cycle-dependent solve results (see unresolvableCache) do not vary between runs
+    private val stackLookup = recipeManager.recipes.toList().sortedBy { it.id().identifier().toString() }.mapNotNull { holder ->
         val resultStack = holder.resultStack() ?: return@mapNotNull null
         resultStack.item to holder
     }.groupBy({ it.first }, { it.second })
@@ -194,16 +197,18 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         Bountiful.LOGGER.debug("Syncing Chaos Config...")
 
 
-        // Remove redundant required items
+        val ignoredIds = ignoreSet.map { it.id!! }.toSet()
+
+        // Remove redundant required items, and unpriced ones that are ignored (priced ones may still feed recipes)
         for ((id, amt) in data.required.toList()) {
-            if (id in info.redundant) {
+            if (id in info.redundant || (amt == null && id in ignoredIds)) {
                 data.required.remove(id)
             }
         }
 
         Bountiful.LOGGER.debug("Terminators:")
         // Insert terminators into required prop
-        for (line in terminators.sorted() - info.redundant.toSet()) {
+        for (line in terminators.sorted() - info.redundant.toSet() - ignoredIds) {
             data.required[line] = costMap[BuiltInRegistries.ITEM.getNullable(line)]
             Bountiful.LOGGER.debug(line)
         }
@@ -217,14 +222,17 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
             val isIgnored = data.matching.isIgnored(item)
             if (costOf(item) == null && item.id !in info.redundant && !isIgnored) {
                 data.optional[item.id!!] = null
-            } else {
+            } else if (data.optional[item.id] == null || item.id in info.redundant || isIgnored) {
+                // Priced optional entries are kept: they are the user's fixed prices for items nothing else can price
                 data.optional.remove(item.id)
             }
         }
+        data.optional = data.optional.toList().sortedBy { it.first.toString() }.toMap().toMutableMap()
 
     }
 
-    fun sendToRegistries(combined: Boolean = false) {
+    /** Registers the chaos pool and returns how many priced items it holds. */
+    fun sendToRegistries(combined: Boolean = false): Int {
         Bountiful.LOGGER.debug("Sending chaos data to Bountiful registries (combined=$combined)..")
 
         if (!combined) {
@@ -269,6 +277,7 @@ class DepthSolver(val server: MinecraftServer, val data: BountifulChaosData, val
         BountifulContent.Decrees.add(decree)
         BountifulContent.populatePools(BountifulContent.Pools + listOf(pool))
         Bountiful.LOGGER.info("Chaos pool has ${pool.items.size} items (${ignoreSet.size} ignored items skipped); ${BountifulContent.Pools.size} pools and ${BountifulContent.Decrees.size} decrees registered (combined=$combined)")
+        return pool.items.size
     }
 
     companion object {
