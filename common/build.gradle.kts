@@ -34,6 +34,8 @@ repositories {
 }
 
 dependencies {
+    // Only for the mixin config plugin's interface (ClassNode); the loaders provide ASM at runtime
+    compileOnly("org.ow2.asm:asm-tree:9.11.1")
     implementation("io.ejekta.kambrik:kambrik-common-${project.property("minecraft_version")}:${project.property("kambrik_version")}")
     implementation("io.ejekta.percale:percale-common-${project.property("minecraft_version")}:${project.property("percale_version")}")
     testImplementation(kotlin("test"))

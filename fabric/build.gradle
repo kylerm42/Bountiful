@@ -15,6 +15,10 @@ sourceSets {
 }
 
 configurations {
+    // Mods added to the dedicated gametest server only (see runGameTestServer): Lithostitched replaces vanilla's jigsaw
+    // placement for every jigsaw structure and Trek is the mod Bountiful's Lithostitched modifiers target, so
+    // the village board tests must run with both. -PnoTrekTests leaves them out.
+    trekTestMods { transitive = false }
     gametestCompileOnly.extendsFrom(compileOnly)
     gametestImplementation.extendsFrom(implementation)
     gametestImplementation.extendsFrom(testImplementation)
@@ -56,6 +60,10 @@ dependencies {
     if (!project.hasProperty('noOptionalMods')) {
         runtimeOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
     }
+    if (!project.hasProperty('noTrekTests')) {
+        trekTestMods "maven.modrinth:lithostitched:${lithostitched_version}"
+        trekTestMods "maven.modrinth:trek:${trek_version}"
+    }
     gametestCompileOnly "maven.modrinth:cloth-config:${cloth_config_fabric_version}"
     gametestCompileOnly "com.terraformersmc:modmenu:${mod_menu_version}"
     compileOnly "com.terraformersmc:modmenu:${mod_menu_version}"
@@ -76,6 +84,9 @@ loom {
             ideConfigGenerated(true)
             runDir('runs/gametest')
             vmArg('-Dfabric-api.gametest=true')
+            if (project.hasProperty('villageSamples')) {
+                vmArg("-Dbountiful.villageSamples=${project.property('villageSamples')}")
+            }
             vmArg("-Dfabric-api.gametest.report-file=${file("$buildDir/reports/game_test/results.xml").absolutePath}")
         }
         // Fabric API client gametest (needs a display). Run: ./gradlew :fabric:runClientGameTest
@@ -123,6 +134,16 @@ tasks.named('jar', Jar) {
 
 tasks.named('runGameTestServer') {
     dependsOn(tasks.named('gametestClasses'))
+    // Also -PextraMods=/dir/with/jars to load further mods
+    doFirst {
+        def jars = configurations.trekTestMods.files.collect { it.absolutePath }
+        if (project.hasProperty('extraMods')) {
+            jars += file(project.property('extraMods')).listFiles().findAll { it.name.endsWith('.jar') }.collect { it.absolutePath }
+        }
+        if (!jars.isEmpty()) {
+            jvmArgs("-Dfabric.addMods=${jars.join(File.pathSeparator)}")
+        }
+    }
 }
 
 tasks.named('runClientGameTest') {

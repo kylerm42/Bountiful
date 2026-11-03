@@ -2,13 +2,15 @@
 	"required": true,
 	"minVersion": "0.8",
 	"package": "io.ejekta.bountiful.mixin",
+	"plugin": "io.ejekta.bountiful.bridge.BountifulMixinPlugin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"BountifulAnvilMenuMixin",
 		"BountifulTaskMixin",
-		"JigsawAddPiecesMixin",
-		"JigsawPlacementMixin",
-		"JigsawPlacerAccessor",
+		"LithostitchedTemplatesMixin",
+		"PoolElementStructurePieceMixin",
+		"StructureGenerateMixin",
+		"StructureTemplatePoolMixin",
 		"SinglePoolElementAccessor"
 	],
 	"injectors": {
