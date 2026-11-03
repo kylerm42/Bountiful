@@ -18,7 +18,15 @@ import java.util.Random
  */
 object JigsawBountyHelper {
 
-    private val BOUNTY_GAZEBO_ID = Identifier.fromNamespaceAndPath("bountiful", "village/common/bounty_gazebo")
+    /**
+     * The bounty gazebo template and its variants. A variant exists for each jigsaw connector name a village mod
+     * expects: `bounty_gazebo` connects with `minecraft:building_entrance`, `bounty_gazebo_floor` (a vertical
+     * connector on the gazebo's floor) with `minecraft:building_floor` (Towns and Towers' nilotic village).
+     */
+    private val BOUNTY_GAZEBO_IDS = setOf(
+        Identifier.fromNamespaceAndPath("bountiful", "village/common/bounty_gazebo"),
+        Identifier.fromNamespaceAndPath("bountiful", "village/common/bounty_gazebo_floor")
+    )
 
     private class Quota(val allowed: Int) {
         var placed = 0
@@ -50,7 +58,7 @@ object JigsawBountyHelper {
         if (element !is SinglePoolElement) return false
         val accessor = element as SinglePoolElementAccessor
         val id: Identifier = accessor.bountiful_getTemplate().left().orElse(null) ?: return false
-        return id == BOUNTY_GAZEBO_ID
+        return id in BOUNTY_GAZEBO_IDS
     }
 
     fun isBountyBoardPiece(piece: PoolElementStructurePiece): Boolean = isBountyBoardElement(piece.element)
